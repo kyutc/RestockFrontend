@@ -1,0 +1,12 @@
+/vendor/
+/log/
+.idea
+private.key
+composer.phar
+config.php
+.vscode
+/.phpunit.cache/
+/node_modules/
+/public/build/
+npm-debug.log
+yarn-error.log
