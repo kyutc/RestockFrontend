@@ -9,4 +9,4 @@ config.php
 /node_modules/
 /public/build/
 npm-debug.log
-yarn-error.log
+yarn-error.log.DS_Store
