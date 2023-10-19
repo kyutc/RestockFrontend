@@ -35,7 +35,7 @@ export class Api {
      * @param {string} password
      * @returns {Promise<Response>}
      */
-    register(username, password, email) {
+    register(username, password) {
         let url = this._base_url + "user";
         let data = {
             "username": username,
