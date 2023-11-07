@@ -51,6 +51,14 @@ const router = async () => {
     const view = new match.route.view(getParams(match));
 
     document.querySelector("#app").innerHTML = await view.getHtml();
+
+    const navLinks = document.querySelectorAll(".nav__link");
+    navLinks.forEach(link => {
+        link.classList.remove("active");
+        if (link.href === window.location.href) {
+            link.classList.add("active");
+        }
+    });
 };
 
 window.addEventListener("popstate", router);
@@ -63,5 +71,15 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     });
 
+
+    const navLinks= document.querySelectorAll(".nav__link");
+    navLinks.forEach(link => {
+        link.addEventListener("click", function() {
+            navLinks.forEach(link => link.classList.remove("active"));
+            this.classList.add("active");
+        });
+    });
+
     router();
 });
+
