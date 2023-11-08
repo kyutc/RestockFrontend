@@ -2,12 +2,23 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Title</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Restock</title>
+    <link rel="stylesheet" href="css/style.css">
     <script type="module" src="https://cdn.jsdelivr.net/npm/@ionic/core/dist/ionic/ionic.esm.js"></script>
     <script nomodule src="https://cdn.jsdelivr.net/npm/@ionic/core/dist/ionic/ionic.js"></script>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@ionic/core/css/ionic.bundle.css" />
 </head>
 <body>
-<script src="app.js" type="module"></script>
+<nav class="nav">
+    <a href="/" class="nav__link" data-link>Login</a>
+    <a href="/pantry" class="nav__link" data-link>Pantry</a>
+    <a href="/recipes" class="nav__link" data-link>Recipes</a>
+    <a href="/shopping_list" class="nav__link" data-link>Shopping List</a>
+    <a href="/history" class="nav__link" data-link>History</a>
+    <a href="/settings" class="nav__link" data-link>Settings</a>
+</nav>
+<div id="app"></div>
+<script type="module" src="src/index.js"></script>
 </body>
 </html>

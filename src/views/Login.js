@@ -11,9 +11,9 @@ export default class extends AbstractView {
             <h1>Login</h1>
             <p>Enter your username and password:</p>
             <form id="loginForm">
-                <label htmlFor="username">Username:</label><br>
+                <label for="username">Username:</label><br>
                 <input type="text" id="username" name="username"><br><br>
-                    <label htmlFor="password">Password:</label><br>
+                    <label for="password">Password:</label><br>
                     <input type="password" id="password" name="password"><br><br>
                         <input type="button" value="Submit" onClick="submitForm()">
             </form>
@@ -33,9 +33,9 @@ export default class extends AbstractView {
             
             <p>Alternatively, enter a new username and password to register:</p>
             <form id="registrationForm">
-                <label htmlFor="username">Username:</label><br>
+                <label for="username">Username:</label><br>
                 <input type="text" id="username" name="username"><br><br>
-                    <label htmlFor="password">Password:</label><br>
+                    <label for="password">Password:</label><br>
                     <input type="password" id="password" name="password"><br><br>
                         <input type="button" value="Register" onClick="submitRegistration()">
             </form>

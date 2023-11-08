@@ -3,7 +3,7 @@ import History from "./views/History.js";
 import Recipes from "./views/Recipes.js";
 import Settings from "./views/Settings.js";
 import Pantry from "./views/Pantry.js";
-import Shopping_List from "./views/Shopping_list.js";
+import Shopping_List from "./views/Shopping_List.js";
 
 const pathToRegex = path => new RegExp("^" + path.replace(/\//g, "\\/").replace(/:\w+/g, "(.+)") + "$");
 
