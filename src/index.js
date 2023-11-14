@@ -52,6 +52,10 @@ const router = async () => {
 
     document.querySelector("#app").innerHTML = await view.getHtml();
 
+    if (view.attachEventListeners) {
+        view.attachEventListeners();
+    }
+
     const navLinks = document.querySelectorAll(".nav__link");
     navLinks.forEach(link => {
         link.classList.remove("active");
