@@ -12,6 +12,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "dexie": "^3.2.4",
     "jquery": "^3.7.1"
   },
   "devDependencies": {
