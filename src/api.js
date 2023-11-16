@@ -1,4 +1,4 @@
-export class Api {
+export default class Api {
     _base_url = "api.cpsc4900.local/api/v1/";
     _headers = {
         "Accept": "application/json",
@@ -14,18 +14,17 @@ export class Api {
      * @param password
      * @returns {Promise<Response>}
      */
-    login(username, password) {
-        let url = this._base_url + "session"
-        let data = {
-            "username": username,
-            "password": password,
-        };
-        const options = {
+    static async login(email, password) {
+        let url = this._base_url + "session";
+        const formData = new FormData();
+        formData.append('email', email);
+        formData.append('password', password);
+
+        return fetch(url, {
             method: "POST",
-            body: JSON.stringify(data),
+            body: formData,
             headers: this._headers
-        }
-        return fetch(url, options);
+        });
     }
 
     /**
@@ -35,18 +34,18 @@ export class Api {
      * @param {string} password
      * @returns {Promise<Response>}
      */
-    register(username, password, email) {
+    static async register(email, username, password) {
         let url = this._base_url + "user";
-        let data = {
-            "username": username,
-            "password": password,
-        };
-        const options = {
+        const formData = new FormData();
+        formData.append('email', email);
+        formData.append('username', username);
+        formData.append('password', password);
+
+        return fetch(url, {
             method: "POST",
-            body: JSON.stringify(data),
+            body: formData,
             headers: this._headers
-        };
-        return fetch(url, options);
+        });
     }
 
     /**
@@ -55,14 +54,13 @@ export class Api {
      * @param {string} username
      * @returns {Promise<Response>}
      */
-    async checkUsernameAvailable(username) {
-        let url = this._base_url + "user/" + username;
+    static async checkUsernameAvailable(username) {
+        const url = this._base_url + "user/" + username;
         const options = {
             method: "HEAD",
             headers: this._headers
         };
-        const response = await fetch(url, options);
-        return response.status === 200;
+        return fetch(url, options);
     }
 
     /**
@@ -70,14 +68,13 @@ export class Api {
      * 
      * @returns {Promise<Response>}
      */
-    async authTest() {
-        let url = this._base_url + "authtest";
+    static async authTest() {
+        const url = this._base_url + "authtest";
         const options = {
             method: "GET",
             headers: this._headers
         };
-        const response = await fetch(url, options);
-        return response;
+        return fetch(url, options);
     }
 
     /**
@@ -85,8 +82,8 @@ export class Api {
      * 
      * @returns {Promise<Response>}
      */
-    async logout() {
-        let url = this._base_url + "session";
+    static async logout() {
+        const url = this._base_url + "session";
         const options = {
             method: "DELETE",
             headers: this._headers
@@ -100,8 +97,8 @@ export class Api {
      * @param {number} userId
      * @returns {Promise<Response>}
      */
-    async getUserAcccount(userId) {
-        let url = this._base_url + "user/" + userId;
+    static async getUserAcccount(userId) {
+        const url = this._base_url + "user/" + userId;
         const options = {
             method: "GET",
             headers: this._headers
@@ -116,12 +113,15 @@ export class Api {
      * @param {object} userDetails
      * @returns {Promise<Response>}
      */
-    async updateUserAccount(userId, userDetails) {
-        let url = this._base_url + "user/" + userId;
+    static async updateUserAccount(userId, userDetails) {
+        const url = this._base_url + "user/" + userId;
         const options = {
             method: "PUT",
             body: JSON.stringify(userDetails),
-            headers: this._headers
+            headers: {
+                ...this._headers,
+                "Content-Type": "application/json"
+            }
         };
         return fetch(url, options);
     }
@@ -132,8 +132,8 @@ export class Api {
      * @param {number} userId
      * @returns {Promise<Response>}
      */
-    async deleteUserAccount(userId) {
-        let url = this._base_url + "user/" + userId;
+    static async deleteUserAccount(userId) {
+        const url = this._base_url + "user/" + userId;
         const options = {
             method: "DELETE",
             headers: this._headers
@@ -147,8 +147,8 @@ export class Api {
      * @param {number} groupId
      * @returns {Promise<Response>}
      */
-    async getGroupDetails(groupId) {
-        let url = this._base_url + "group/" + groupId;
+    static async getGroupDetails(groupId) {
+        const url = this._base_url + "group/" + groupId;
         const options = {
             method: "GET",
             headers: this._headers
@@ -163,8 +163,8 @@ export class Api {
      * @param {object} groupDetails
      * @returns {Promise<Response>}
      */
-    async createGroup(groupId, groupDetails) {
-        let url = this._base_url + "group/" + groupId;
+    static async createGroup(groupId, groupDetails) {
+        const url = this._base_url + "group/" + groupId;
         const options = {
             method: "POST",
             body: JSON.stringify(groupDetails),
@@ -180,12 +180,15 @@ export class Api {
      * @param {object} groupDetails
      * @returns {Promise<Response>}
      */
-    async updateGroup(groupId, groupDetails) {
-        let url = this._base_url + "group/" + groupId;
+    static async updateGroup(groupId, groupDetails) {
+        const url = this._base_url + "group/" + groupId;
         const options = {
             method: "PUT",
             body: JSON.stringify(groupDetails),
-            headers: this._headers
+            headers: {
+                ...this._headers,
+                "Content-Type": "application/json"
+            }
         };
         return fetch(url, options);
     }
@@ -196,8 +199,8 @@ export class Api {
      * @param {number} groupId
      * @returns {Promise<Response>}
      */
-    async deleteGroup(groupId) {
-        let url = this._base_url + "group/" + groupId;
+    static async deleteGroup(groupId) {
+        const url = this._base_url + "group/" + groupId;
         const options = {
             method: "DELETE",
             headers: this._headers
@@ -211,8 +214,8 @@ export class Api {
      * @param {number} memberId
      * @returns {Promise<Response>}
      */
-    async getGroupMemberDetails(memberId) {
-        let url = this._base_url + "groupmember/" + memberId;
+    static async getGroupMemberDetails(memberId) {
+        const url = this._base_url + "groupmember/" + memberId;
         const options = {
             method: "GET",
             headers: this._headers
@@ -227,8 +230,8 @@ export class Api {
      * @param {object} memberDetails
      * @returns {Promise<Response>}
      */
-    async addGroupMember(groupId, memberDetails) {
-        let  url = this._base_url + "group/" + groupId + "/addmember";
+    static async addGroupMember(groupId, memberDetails) {
+        const url = this._base_url + "group/" + groupId + "/addmember";
         const options = {
             method: "POST",
             body: JSON.stringify(memberDetails),
@@ -244,12 +247,15 @@ export class Api {
      * @param {object} memberDetails
      * @returns {Promise<Response>}
      */
-    async updateGroupMember(memberId, memberDetails) {
-        let url = this._base_url + "groupmember/" + memberId;
+    static async updateGroupMember(memberId, memberDetails) {
+        const url = this._base_url + "groupmember/" + memberId;
         const options = {
             method: "PUT",
             body: JSON.stringify(memberDetails),
-            headers: this._headers
+            headers: {
+                ...this._headers,
+                "Content-Type": "application/json"
+            }
         };
         return fetch(url, options);
     }
@@ -260,8 +266,8 @@ export class Api {
      * @param {number} memberId
      * @returns {Promise<Response>}
      */
-    async deleteGroupMember(memberId) {
-        let url = this._base_url + "groupmember/" + memberId;
+    static async deleteGroupMember(memberId) {
+        const url = this._base_url + "groupmember/" + memberId;
         const options = {
             method: "DELETE",
             headers: this._headers
