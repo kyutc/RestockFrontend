@@ -11,10 +11,10 @@ export default class extends AbstractView {
     async getHtml() {
         return `
             <h1>Login</h1>
-            <p>Enter your username and password:</p>
+            <p>Enter your email and password:</p>
             <form id="loginForm">
-                <label for="login-username">Username:</label><br>
-                <input type="text" id="login-username" name="username"><br><br>
+                <label for="login-email">Email:</label><br>
+                <input type="email" id="login-email" name="email"><br><br>
                     <label for="login-password">Password:</label><br>
                     <input type="password" id="login-password" name="password"><br><br>
                         <input type="button" id="login-button" value="Submit">
@@ -22,8 +22,10 @@ export default class extends AbstractView {
             
             <br><hr>
             
-            <p>Alternatively, enter a new username and password to register:</p>
+            <p>Alternatively, you can create an account:</p>
             <form id="registrationForm">
+                <label for="email">Email:</label><br>
+                <input type="email" id="register-email" name="email" required><br><br>
                 <label for="register-username">Username:</label><br>
                 <input type="text" id="register-username" name="username"><br><br>
                     <label for="register-password">Password:</label><br>
@@ -34,11 +36,11 @@ export default class extends AbstractView {
     }
 
     async submitLoginForm() {
-        const username = document.getElementById('login-username').value;
+        const email = document.getElementById('login-email').value;
         const password = document.getElementById('login-password').value;
 
         try {
-            const response = await this.api.login(username, password);
+            const response = await Api.login(email, password);
             if (response.ok) {
                 const data = await response.json();
                 localStorage.setItem('token', data.token);
@@ -53,11 +55,12 @@ export default class extends AbstractView {
     }
 
     async submitRegistrationForm() {
+        const email = document.getElementById('register-email').value;
         const username = document.getElementById('register-username').value;
         const password = document.getElementById('register-password').value;
 
         try {
-            const response = await this.api.register(username, password);
+            const response = await Api.register(email, username, password);
             if (response.ok) {
                 alert('Registration successful. Please log in.');
             } else {
