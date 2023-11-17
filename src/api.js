@@ -1,6 +1,6 @@
 export default class Api {
-    _base_url = "api.cpsc4900.local/api/v1/";
-    _headers = {
+    static _base_url = "api.cpsc4900.local/api/v1/";
+    static _headers = {
         "Accept": "application/json",
         "X-RestockApiToken": "anything"
     };
@@ -10,12 +10,12 @@ export default class Api {
     /**
      * Attempt to log a user into the server.
      *
-     * @param username
+     * @param email
      * @param password
      * @returns {Promise<Response>}
      */
     static async login(email, password) {
-        let url = this._base_url + "session";
+        const url = this._base_url + "session";
         const formData = new FormData();
         formData.append('email', email);
         formData.append('password', password);
@@ -30,12 +30,13 @@ export default class Api {
     /**
      * Register a new user on the server.
      * 
+     * @param {string} email
      * @param {string} username
      * @param {string} password
      * @returns {Promise<Response>}
      */
     static async register(email, username, password) {
-        let url = this._base_url + "user";
+        const url = this._base_url + "user";
         const formData = new FormData();
         formData.append('email', email);
         formData.append('username', username);
@@ -84,9 +85,13 @@ export default class Api {
      */
     static async logout() {
         const url = this._base_url + "session";
+        const token = localStorage.getItem('token');
         const options = {
             method: "DELETE",
-            headers: this._headers
+            headers: {
+                ...this._headers,
+                "X-RestockUserApiToken": token
+            }
         };
         return fetch(url, options);
     }
@@ -134,9 +139,13 @@ export default class Api {
      */
     static async deleteUserAccount(userId) {
         const url = this._base_url + "user/" + userId;
+        const token = localStorage.getItem('token');
         const options = {
             method: "DELETE",
-            headers: this._headers
+            headers: {
+                ...this._headers,
+                "X-RestockUserApiToken": token
+            }
         };
         return fetch(url, options);
     }

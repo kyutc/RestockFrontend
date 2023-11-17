@@ -17,7 +17,7 @@ export default class extends AbstractView {
                 <input type="email" id="login-email" name="email"><br><br>
                     <label for="login-password">Password:</label><br>
                     <input type="password" id="login-password" name="password"><br><br>
-                        <input type="button" id="login-button" value="Submit">
+                    <ion-button shape="round" size="small" color="primary" fill="outline" id="login-button">Login</ion-button>
             </form>
             
             <br><hr>
@@ -30,7 +30,7 @@ export default class extends AbstractView {
                 <input type="text" id="register-username" name="username"><br><br>
                     <label for="register-password">Password:</label><br>
                     <input type="password" id="register-password" name="password"><br><br>
-                        <input type="button" id="register-button" value="Register">
+                    <ion-button shape="round" size="small" color="primary" fill="outline" id="register-button">Register</ion-button>
             </form>
         `;
     }
