@@ -1,5 +1,6 @@
 import AbstractView from "./AbstractView.js";
 import Api from "../api.js";
+import {navigateTo} from "../index.js";
 
 export default class extends AbstractView {
     constructor(params) {
@@ -13,22 +14,10 @@ export default class extends AbstractView {
             <h1>Settings</h1>
             <p>Manage your privacy and configuration.</p>
 
-            <section id="group-management">
-                <h3>Group Management</hh3>
+            <!-- Manage Groups Button -->    
+            <ion-button shape="round" size="small" fill="outline" type="submit" id="manage-group">Manage Groups</ion-button>
 
-                <!-- Form to create a new group -->
-                <form id="create-group-form">
-                    <input type="text" id="group-name" class="custom-input" placeholder="Enter Group name" required />              
-                    <ion-button shape="round" size="small" fill="outline" type="submit" id="create-group">Create Group</ion-button>
-                </form>
-                    
-                <!-- List of Existing groups -->
-                <div id="groups-list">
-                    <!-- TODO: Groups will be populated here -->
-                </div>
-            </section>
-
-            <section id="account-managemnt">
+            <section id="account-management">
                 <h3>Account Management</h3>
 
                 <!-- Logout Button -->
@@ -46,7 +35,7 @@ export default class extends AbstractView {
             try {
                 const response = await Api.logout();
                 if (response.ok) {
-                    console.log('Logged out succcessfully');
+                    console.log('Logged out successfully');
                 } else {
                     console.error('Logout failed: ', response);
                 }
@@ -90,6 +79,12 @@ export default class extends AbstractView {
         document.getElementById('delete-account').addEventListener('click', e => {
             e.preventDefault();
             this.deleteAccount();
+        });
+
+        document.getElementById('manage-group').addEventListener('click', e => {
+            e.preventDefault();
+            // Navigate to the "manage_groups" route
+            navigateTo('/manage_groups');
         });
     }
 }
