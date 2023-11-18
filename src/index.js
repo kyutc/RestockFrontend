@@ -4,6 +4,7 @@ import Recipes from "./views/Recipes.js";
 import Settings from "./views/Settings.js";
 import Pantry from "./views/Pantry.js";
 import Shopping_List from "./views/Shopping_List.js";
+import Manage_Groups from "./views/Manage_Groups.js";
 
 const pathToRegex = path => new RegExp("^" + path.replace(/\//g, "\\/").replace(/:\w+/g, "(.+)") + "$");
 
@@ -28,7 +29,8 @@ const router = async () => {
         { path: "/shopping_list", view: Shopping_List },
         { path: "/recipes", view: Recipes },
         { path: "/history", view: History },
-        { path: "/settings", view: Settings }
+        { path: "/settings", view: Settings },
+        { path: "/manage_groups", view: Manage_Groups },
     ];
 
     // Test each route for potential match
@@ -41,6 +43,7 @@ const router = async () => {
 
     let match = potentialMatches.find(potentialMatch => potentialMatch.result !== null);
 
+    //Default page if URL does not match any known routes
     if (!match) {
         match = {
             route: routes[0],
@@ -86,4 +89,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     router();
 });
+
+//For letting pages navigate to other pages
+export {navigateTo};
 
