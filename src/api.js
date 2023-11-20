@@ -1,9 +1,17 @@
 export default class Api {
-    static _base_url = "api.cpsc4900.local/api/v1/";
+    static _base_url = "https://api.pantrysync.pro/api/v1/";
     static _headers = {
         "Accept": "application/json",
-        "X-RestockApiToken": "anything"
+        "X-RestockApiToken": "anything",
+        "X-RestockUserApiToken" : localStorage.getItem("token")
     };
+    static _get_headers(){
+        return {
+            "Accept": "application/json",
+            "X-RestockApiToken": "anything",
+            "X-RestockUserApiToken" : localStorage.getItem("token")
+        }
+    }
 
     // Todo: Constructor to initialize class properties
 
@@ -88,10 +96,7 @@ export default class Api {
         const token = localStorage.getItem('token');
         const options = {
             method: "DELETE",
-            headers: {
-                ...this._headers,
-                "X-RestockUserApiToken": token
-            }
+            headers: this._get_headers()
         };
         return fetch(url, options);
     }
@@ -166,14 +171,32 @@ export default class Api {
     }
 
     /**
-     * Create a new group on the server.
-     * 
-     * @param {number} groupId
-     * @param {object} groupDetails
+     * Get the list of groups from the server.
+     *
      * @returns {Promise<Response>}
      */
-    static async createGroup(groupId, groupDetails) {
-        const url = this._base_url + "group/" + groupId;
+    static async getGroups() {
+        const url = this._base_url + "group";
+        const token = localStorage.getItem('token');
+        const options = {
+            method: "GET",
+            headers: {
+                ...this._headers,
+                "X-RestockUserApiToken": token
+            }
+        };
+        return fetch(url, options);
+    }
+
+    /**
+     * Create a new group on the server.
+     * 
+     * @param {String} name
+     * @returns {Promise<Response>}
+     */
+    static async createGroup(name) {
+        const url = this._base_url + "group";
+        const groupDetails = { name };
         const options = {
             method: "POST",
             body: JSON.stringify(groupDetails),
