@@ -1,5 +1,6 @@
 import AbstractView from "./AbstractView.js";
 import Api from '../api.js';
+import {navigateTo} from "../index.js";
 
 export default class extends AbstractView {
     constructor(params) {
@@ -43,8 +44,8 @@ export default class extends AbstractView {
             const response = await Api.login(email, password);
             if (response.ok) {
                 const data = await response.json();
-                localStorage.setItem('token', data.token);
-                window.location.href = '/pantry';
+                localStorage.setItem('token', data.session);
+                navigateTo('/pantry');
             } else {
                 alert('Login failed');
 
@@ -72,8 +73,16 @@ export default class extends AbstractView {
     }
 
     attachEventListeners() {
-        document.getElementById('login-button').addEventListener('click', () => this.submitLoginForm());
-        document.getElementById('register-button').addEventListener('click', () => this.submitRegistrationForm());
+        document.getElementById('login-button').addEventListener('click', (e) => {
+            e.preventDefault()
+            this.submitLoginForm();
+
+        });
+        document.getElementById('register-button').addEventListener('click', (e) => {
+            e.preventDefault()
+            this.submitRegistrationForm();
+
+        });
     }
 }
 
