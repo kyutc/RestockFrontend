@@ -55,7 +55,11 @@ export default class extends AbstractView {
                 <div class="group-header">
                     <span class="group-name" data-group-id="${group.id}">${group.name}</span>
                     <ion-icon name="arrow-forward" class="group-arrow" data-group-id="${group.id}"></ion-icon>
+                    <button class="rename-group" data-group-id="${group.id}">Rename</button>
+                    <button class="delete-group" data-group-id="${group.id}">Delete</button>
                 </div>
+                <!-- Add a container for group details with a unique ID -->
+                <div id="group-details-${group.id}" style="display: none;"></div>
             </div>
         `).join('');
     }
@@ -102,6 +106,57 @@ export default class extends AbstractView {
         return `<p>${details.description}</p>`;
     }
 
+    async renameGroup(groupId, newName) {
+        try {
+            // Update the group name through the API
+            const response = await Api.renameGroup(groupId, newName);
+            const responseData = await response.json();
+
+            if (responseData.result === 'success') {
+                // Update the group object in the local storage
+                const group = new Group(responseData.group);
+                await restockdb.putGroup(group);
+            }
+
+            alert("Group renamed successfully");
+            return response;
+        } catch (error) {
+            console.error('Unable to rename group: ', error);
+        }
+    }
+
+    async deleteGroup(groupId) {
+        try {
+            // Delete the group through the API
+            const response = await Api.deleteGroup(groupId);
+            const responseData = await response.json();
+
+            if (responseData.result === 'success') {
+                // Remove the group and all members from the DB
+                await restockdb.deleteGroup(groupId);
+                await restockdb.deleteGroupMembers(groupId);
+            }
+
+            alert("Group deleted successfully");
+            return response;
+        } catch (error) {
+            console.error('Unable to delete group: ', error);
+        }
+    }
+
+    async refreshView() {
+        // Fetch and render the updated list of groups
+        const groups = await this.fetchGroups().then(response => response.json());
+        const groupsHtml = this.renderGroups(groups);
+
+        // Update the groups list container
+        const groupsListContainer = document.getElementById('groups-list');
+        groupsListContainer.innerHTML = groupsHtml;
+
+        // Reattach event listeners for the updated elements
+        await this.attachEventListeners();
+    }
+
     async attachEventListeners() {
         document.getElementById('create-group').addEventListener('click', () => {
             const formContainer = document.getElementById('create-group-form-container');
@@ -112,6 +167,7 @@ export default class extends AbstractView {
         document.getElementById('submit-group').addEventListener('click', async (e) => {
             e.preventDefault();
             const response = await this.createGroup();
+            await this.refreshView();
             return response;
         });
         // Handle click on arrow to show/hide details
@@ -128,6 +184,33 @@ export default class extends AbstractView {
                     const detailsJson = await detailsResponse.json();
                     // Render and append group details to the container
                     groupDetailsContainer.innerHTML = this.renderGroupDetails(detailsJson);
+                }
+            });
+        });
+        // Handle click on "Rename" Button
+        const renameButtons = document.querySelectorAll('.rename-group');
+        renameButtons.forEach(button => {
+            button.addEventListener('click', async (event) => {
+                const groupId = event.target.dataset.groupId;
+                const newName = prompt("Enter the new name for the group:");
+                if (newName !== null) {
+                    await this.renameGroup(groupId, newName);
+                    // Refresh the view after renaming
+                    await this.refreshView();
+                }
+            });
+        });
+
+        // Handle click on "Delete" button
+        const deleteButtons = document.querySelectorAll('.delete-group');
+        deleteButtons.forEach(button => {
+            button.addEventListener('click', async (event) => {
+                const groupId = event.target.dataset.groupId;
+                const confirmDelete = confirm("Are you sure you want to delete this group?");
+                if (confirmDelete) {
+                    await this.deleteGroup(groupId);
+                    // Refresh the view after deleting
+                    await this.refreshView();
                 }
             });
         });
