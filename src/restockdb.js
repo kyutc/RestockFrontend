@@ -75,16 +75,28 @@ class RestockDB extends Dexie {
         return this.groups.put(group);
     }
 
+    /**
+     * @param group_id
+     */
+    async deleteGroup(group_id) {
+        this.groups.delete(group_id)
+            .then(group_id => this.deleteGroupMembers(group_id));
+    }
+
     async deleteGroupMembers(group_id) {
         return this.group_members
             .where("group_id")
             .equals(group_id)
             .toArray()
-            .then(members => members.map(member => this.group_members.delete(member['id'])));
+            .then(members => members.map(member => this.deleteGroupMember(member['id'])));
     }
 
-    async getGroupMember(group_member_id) {
-        return this.group_members.get(group_member_id);
+    /**
+     * @param group_id
+     * @param user_id
+     */
+    async getGroupMember(group_id, user_id) {
+        return this.group_members.where({group_id: group_id, user_id: user_id});
     }
 
     async deleteGroupMember(group_member_id) {
