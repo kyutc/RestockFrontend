@@ -44,6 +44,9 @@ export default class extends AbstractView {
             const response = await Api.login(email, password);
             if (response.ok) {
                 const data = await response.json();
+                const userId = data.id;
+                localStorage.setItem('userId', userId);
+
                 const token = data.session;
                 localStorage.setItem('token', token);
                 navigateTo('/pantry');
