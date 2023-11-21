@@ -52,8 +52,7 @@ const router = async () => {
     }
 
     // Check if a group_id is selected before rendering "Pantry" and "Shopping_List" views
-    const manageGroupsInstance = new Manage_Groups();
-    const isGroupSelected = false //manageGroupsInstance.isGroupSelected();
+    const isGroupSelected = (localStorage.getItem('selectedGroupId') != null);
 
     if ((match.route.path === "/pantry" || match.route.path === "/shopping_list") && !isGroupSelected) {
         // Redirect to the default view or another view of your choice
