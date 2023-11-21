@@ -57,12 +57,14 @@ export default class extends AbstractView {
         }
 
         const token = localStorage.getItem('token');
-        if (token) {
+        const userId = localStorage.getItem('userId');
+        if (token && userId) {
             try {
-                const response = await Api.deleteUserAccount();
+                const response = await Api.deleteUserAccount(userId);
                 if (response.ok) {
                     console.log('Account deleted successfully');
                     localStorage.removeItem('token');
+                    localStorage.removeItem('userId');
                     window.location.href = '/login';
                 } else {
                     console.error('Account deletion failed: ', response);

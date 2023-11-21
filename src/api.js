@@ -152,8 +152,7 @@ export default class Api {
         const options = {
             method: "DELETE",
             headers: {
-                ...this._headers,
-                "X-RestockUserApiToken": token
+                ...this._get_headers(),
             }
         };
         return fetch(url, options);
