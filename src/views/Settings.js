@@ -101,7 +101,7 @@ export default class extends AbstractView {
 
         document.getElementById('rename-button').addEventListener('click', e => {
             e.preventDefault();
-            const userId = event.target.dataset.userId;
+            const userId = localStorage.getItem('userId');
             const newName = prompt("Enter the new username:");
             if (newName !== null) {
                 this.renameUser(userId, newName);
