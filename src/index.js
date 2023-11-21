@@ -43,12 +43,22 @@ const router = async () => {
 
     let match = potentialMatches.find(potentialMatch => potentialMatch.result !== null);
 
-    //Default page if URL does not match any known routes
+    // Default page if URL does not match any known routes
     if (!match) {
         match = {
             route: routes[0],
             result: [location.pathname]
         };
+    }
+
+    // Check if a group_id is selected before rendering "Pantry" and "Shopping_List" views
+    const manageGroupsInstance = new Manage_Groups();
+    const isGroupSelected = false //manageGroupsInstance.isGroupSelected();
+
+    if ((match.route.path === "/pantry" || match.route.path === "/shopping_list") && !isGroupSelected) {
+        // Redirect to the default view or another view of your choice
+        navigateTo("/");
+        return;
     }
 
     const view = new match.route.view(getParams(match));
@@ -59,6 +69,21 @@ const router = async () => {
         view.attachEventListeners();
     }
 
+    // Get the "Pantry" and "Shopping List" links by their data-link attribute
+    const pantryLink = document.querySelector('[data-link="/pantry"]');
+    const shoppingListLink = document.querySelector('[data-link="/shopping_list"]');
+
+    // Update the visibility of the links based on whether a group is selected
+    if (!isGroupSelected) {
+        // If no group is selected, hide the links
+        pantryLink.style.display = "none";
+        shoppingListLink.style.display = "none";
+    } else {
+        // Otherwise, show the links
+        pantryLink.style.display = "block";
+        shoppingListLink.style.display = "block";
+    }
+
     const navLinks = document.querySelectorAll(".nav__link");
     navLinks.forEach(link => {
         link.classList.remove("active");
@@ -67,7 +92,6 @@ const router = async () => {
         }
     });
 };
-
 window.addEventListener("popstate", router);
 
 document.addEventListener("DOMContentLoaded", () => {
