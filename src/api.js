@@ -124,10 +124,14 @@ export default class Api {
      * @returns {Promise<Response>}
      */
     static async updateUserAccount(userId, userDetails) {
+        const userObj =
+            {
+                "name": userDetails,
+            };
         const url = this._base_url + "user/" + userId;
         const options = {
             method: "PUT",
-            body: JSON.stringify(userDetails),
+            body: JSON.stringify(userObj),
             headers: {
                 ...this._headers,
                 "Content-Type": "application/json"
@@ -185,7 +189,11 @@ export default class Api {
                 "X-RestockUserApiToken": token
             }
         };
-        return fetch(url, options);
+        const response = await fetch(url, options);
+        const responseData = await response.json();
+        console.log(response, responseData);
+
+        return responseData;
     }
 
     /**
@@ -196,10 +204,14 @@ export default class Api {
      */
     static async createGroup(name) {
         const url = this._base_url + "group";
-        const groupDetails = { name };
+        const formData = new FormData();
+        formData.append('name', name)
+
+        console.log(formData);
+        console.log(JSON.stringify(formData));
         const options = {
             method: "POST",
-            body: JSON.stringify(groupDetails),
+            body: formData,
             headers: this._headers
         };
         return fetch(url, options);
@@ -209,14 +221,20 @@ export default class Api {
      * Update details of a specific group.
      * 
      * @param {number} groupId
-     * @param {object} groupDetails
+     * @param {String} groupDetails
      * @returns {Promise<Response>}
      */
     static async updateGroup(groupId, groupDetails) {
+        const groupObj =
+        {
+            "name": groupDetails,
+        };
         const url = this._base_url + "group/" + groupId;
+        console.log("new name:", groupObj);
+        console.log("json version of new name:", JSON.stringify(groupObj))
         const options = {
             method: "PUT",
-            body: JSON.stringify(groupDetails),
+            body: `'${JSON.stringify(groupObj)}'`,
             headers: {
                 ...this._headers,
                 "Content-Type": "application/json"
