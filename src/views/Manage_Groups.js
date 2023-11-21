@@ -16,6 +16,11 @@ export default class extends AbstractView {
         return this.selectedGroupId !== null;
     }
 
+    setSelectedGroupId(groupId){
+        this.selectedGroupId = groupId;
+        localStorage.setItem('selectedGroupId', groupId);
+    }
+
     async getHtml() {
         const groups = await this.fetchGroups();
         const groupsHtml = this.renderGroups(groups);
@@ -79,8 +84,9 @@ export default class extends AbstractView {
             if (responseData.result === 'success') {
                 // Instantiate a Group object
                 const group = new Group(responseData.group)
+                const groupId = group.id;
                 // Set the currently selected group to the new group.
-                this.selectedGroupId = group.get['id']();
+                this.setSelectedGroupId(groupId);
                 // Instantiate a GroupMember object
                 const group_member = new GroupMember(responseData.group_member)
                 // Save the group and group member information to the DB
