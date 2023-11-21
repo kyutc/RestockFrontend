@@ -12,8 +12,12 @@ export default class extends AbstractView {
         this.selectedGroupId = null; // Track the currently selected group
     }
 
+    isGroupSelected() {
+        return this.selectedGroupId !== null;
+    }
+
     async getHtml() {
-        const groups = await this.fetchGroups().then(response=> response.json());
+        const groups = await this.fetchGroups();
         const groupsHtml = this.renderGroups(groups);
 
         return `
@@ -41,8 +45,8 @@ export default class extends AbstractView {
 
     async fetchGroups() {
         try {
-            const response = await Api.getGroups();
-            return response;
+            const groups = await Api.getGroups();
+            return groups;
         } catch (error) {
             console.error('Unable to display groups: ', error);
             return [];
@@ -51,17 +55,17 @@ export default class extends AbstractView {
 
     renderGroups(groups) {
         return groups.map(group => `
-            <div class="group-container">
-                <div class="group-header">
-                    <span class="group-name" data-group-id="${group.id}">${group.name}</span>
-                    <ion-icon name="arrow-forward" class="group-arrow" data-group-id="${group.id}"></ion-icon>
-                    <button class="rename-group" data-group-id="${group.id}">Rename</button>
-                    <button class="delete-group" data-group-id="${group.id}">Delete</button>
-                </div>
-                <!-- Add a container for group details with a unique ID -->
-                <div id="group-details-${group.id}" style="display: none;"></div>
+        <div class="group-container">
+            <div class="group-header">
+                <span class="group-name" data-group-id="${group.id}">${group.name}</span>
+                <ion-icon name="arrow-forward" class="group-arrow" data-group-id="${group.id}"></ion-icon>
+                <button class="rename-group" data-group-id="${group.id}">Rename</button>
+                <button class="delete-group" data-group-id="${group.id}">Delete</button>
             </div>
-        `).join('');
+            <!-- Add a container for group details with a unique ID -->
+            <div id="group-details-${group.id}" style="display: none;"></div>
+        </div>
+    `).join('');
     }
 
     async createGroup() {
@@ -75,6 +79,8 @@ export default class extends AbstractView {
             if (responseData.result === 'success') {
                 // Instantiate a Group object
                 const group = new Group(responseData.group)
+                // Set the currently selected group to the new group.
+                this.selectedGroupId = group.get['id']();
                 // Instantiate a GroupMember object
                 const group_member = new GroupMember(responseData.group_member)
                 // Save the group and group member information to the DB
@@ -82,8 +88,7 @@ export default class extends AbstractView {
                 await restockdb.putGroupMember(group_member);
             }
 
-            // Set the currently selected group to the new group.
-            this.selectedGroupId = group.id;
+
 
             alert("Group created successfully");
             return response;
@@ -109,7 +114,7 @@ export default class extends AbstractView {
     async renameGroup(groupId, newName) {
         try {
             // Update the group name through the API
-            const response = await Api.renameGroup(groupId, newName);
+            const response = await Api.updateGroup(groupId, newName);
             const responseData = await response.json();
 
             if (responseData.result === 'success') {
@@ -134,7 +139,6 @@ export default class extends AbstractView {
             if (responseData.result === 'success') {
                 // Remove the group and all members from the DB
                 await restockdb.deleteGroup(groupId);
-                await restockdb.deleteGroupMembers(groupId);
             }
 
             alert("Group deleted successfully");
@@ -146,7 +150,7 @@ export default class extends AbstractView {
 
     async refreshView() {
         // Fetch and render the updated list of groups
-        const groups = await this.fetchGroups().then(response => response.json());
+        const groups = await this.fetchGroups();
         const groupsHtml = this.renderGroups(groups);
 
         // Update the groups list container
