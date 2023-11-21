@@ -15,6 +15,10 @@ export default class {
         return this.#name;
     }
 
+    get ['id']() {
+        return this.#id;
+    }
+
     set ['name'](value) {
         this.#name = value;
     }
