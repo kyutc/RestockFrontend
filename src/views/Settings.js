@@ -22,6 +22,9 @@ export default class extends AbstractView {
 
                 <!-- Logout Button -->
                 <ion-button shape="round" size="small" color="primary" fill="outline" id="logout-button">Logout</ion-button>
+                
+                <!-- Change Username Button -->
+                <ion-button shape="round" size="small" color="primary" fill="outline" id="rename-button">Change Username</ion-button>
 
                 <h5>Danger Zone<h5>
                 <ion-button shape="round" size="small" color="danger" fill="outline" id="delete-account">Delete Account</ion-button>
@@ -69,7 +72,20 @@ export default class extends AbstractView {
             }
         }
     }
-    
+
+    async renameUser(userId, newName) {
+        try {
+            // Update the group name through the API
+            const response = await Api.updateUserAccount(userId, newName);
+            const responseData = await response.json();
+
+            alert("User renamed successfully");
+            return responseData;
+        } catch (error) {
+            console.error('Unable to rename user: ', error);
+        }
+    }
+
     async attachEventListeners() {
         document.getElementById('logout-button').addEventListener('click', e => {
             e.preventDefault();
@@ -79,6 +95,15 @@ export default class extends AbstractView {
         document.getElementById('delete-account').addEventListener('click', e => {
             e.preventDefault();
             this.deleteAccount();
+        });
+
+        document.getElementById('rename-button').addEventListener('click', e => {
+            e.preventDefault();
+            const userId = event.target.dataset.userId;
+            const newName = prompt("Enter the new username:");
+            if (newName !== null) {
+                this.renameUser(userId, newName);
+            }
         });
 
         document.getElementById('manage-group').addEventListener('click', e => {
