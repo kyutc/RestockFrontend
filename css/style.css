@@ -38,3 +38,7 @@ body {
 a {
     color: #009579;
 }
+
+input {
+    background-color: wheat;
+}
