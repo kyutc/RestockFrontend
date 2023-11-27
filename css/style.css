@@ -30,9 +30,12 @@ body {
 }
 
 #app {
-    margin: 2em 0 0 calc(var(--nav-width) + 2em);
+    max-height: calc(100vh);
+    margin-left: var(--nav-width);
+    padding-left: 2em;
     line-height: 1.5;
     font-weight: 500;
+    overflow: auto;
 }
 
 a {
