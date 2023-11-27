@@ -48,6 +48,7 @@ export default class extends AbstractView {
         }
 
         localStorage.removeItem('token');
+        localStorage.removeItem('userId');
         window.location.href = '/login';
     }
 
