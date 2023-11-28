@@ -31,6 +31,8 @@ export default class extends AbstractView {
                 <input type="text" id="register-username" name="username"><br><br>
                     <label for="register-password">Password:</label><br>
                     <input type="password" id="register-password" name="password"><br><br>
+                    <label for="register-password-confirm">Confirm Password:</label><br>
+                    <input type="password" id="register-password-confirm" name="password-confirm"><br><br>
                     <ion-button shape="round" size="small" color="primary" fill="outline" id="register-button">Register</ion-button>
             </form>
         `;
@@ -63,6 +65,12 @@ export default class extends AbstractView {
         const email = document.getElementById('register-email').value;
         const username = document.getElementById('register-username').value;
         const password = document.getElementById('register-password').value;
+        const confirmPassword = document.getElementById('register-password-confirm').value;
+
+        if (password !== confirmPassword) {
+            alert('Passwords do not match');
+            return;
+        }
 
         try {
             const response = await Api.register(email, username, password);
