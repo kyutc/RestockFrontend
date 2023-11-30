@@ -77,7 +77,8 @@ export default class extends AbstractView {
             if (response.ok) {
                 alert('Registration successful. Please log in.');
             } else {
-                alert('Registration failed');
+                const data = await response.json();
+                alert(`Registration failed: ${data.message}`);
             }
         } catch (error) {
             console.error('Registration error: ', error);
