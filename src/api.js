@@ -226,6 +226,7 @@ export default class Api {
     static async updateGroup(groupId, groupDetails) {
         const groupObj =
         {
+            "group_id": groupId,
             "name": groupDetails,
         };
         const url = this._base_url + "group/" + groupId;
@@ -233,7 +234,7 @@ export default class Api {
         console.log("json version of new name:", JSON.stringify(groupObj))
         const options = {
             method: "PUT",
-            body: `'${JSON.stringify(groupObj)}'`,
+            body: JSON.stringify(groupObj),
             headers: {
                 ...this._headers,
                 "Content-Type": "application/json"
