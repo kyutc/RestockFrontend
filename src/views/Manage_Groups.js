@@ -121,6 +121,10 @@ export default class extends AbstractView {
         try {
             // Update the group name through the API
             const response = await Api.updateGroup(groupId, newName);
+            if (!response.ok) {
+                this.handleError(response.status);
+                return;
+            }
             const responseData = await response.json();
 
             if (responseData.result === 'success') {
@@ -134,6 +138,13 @@ export default class extends AbstractView {
         } catch (error) {
             console.error('Unable to rename group: ', error);
         }
+    }
+    handleError(status) {
+        const errorMessages = {
+            400: 'Name must not be empty.',
+            500: 'Name is too long.'
+        };
+        alert('Failed to rename group: ' + (errorMessages[status]));
     }
 
     async deleteGroup(groupId) {
