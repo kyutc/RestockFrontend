@@ -133,6 +133,7 @@ export default class extends AbstractView {
             return response;
         } catch (error) {
             console.error('Unable to rename group: ', error);
+            alert(`Unable to rename group: ${error.message}`);
         }
     }
 
