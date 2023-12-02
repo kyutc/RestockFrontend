@@ -16,6 +16,7 @@ export default class extends AbstractView {
         return this.selectedGroupId !== null;
     }
 
+    // TODO Implement means of selecting group id
     setSelectedGroupId(groupId){
         this.selectedGroupId = groupId;
         localStorage.setItem('selectedGroupId', groupId);
@@ -28,16 +29,15 @@ export default class extends AbstractView {
         return `
         <h1>Manage Groups</h1>
 
-        <ion-button shape="round" size="small" fill="outline" type="submit" id="create-group">Create Group</ion-button>
+        <ion-button size="small" type="submit" id="create-group">Create Group</ion-button>
         
-        <section id="group-creation">
-            <!-- Form to create a new group -->
-            <div id="create-group-form-container" style="display: none;">
-                <input type="text" id="group-name" class="custom-input" placeholder="Enter Group Name" required />
-                <br>              
-                <ion-button shape="round" size="small" fill="outline" type="submit" id="submit-group">Submit</ion-button>
-            </div>
-        </section>
+        <!-- Form to create a new group -->          
+        <ion-grid id="group-creation" style="display: none">
+            <ion-row>
+                <ion-col><ion-input label="Enter Group Name" label-placement="floating" fill="solid" id="group-name" required></ion-input></ion-col>
+                <ion-col><ion-button shape="square" size="medium" type="submit" clear id="submit-group">Submit</ion-button></ion-col>
+            </ion-row>
+        </ion-grid>
         
         <section id="group-management">
             <!-- List of Existing groups -->
@@ -59,18 +59,16 @@ export default class extends AbstractView {
     }
 
     renderGroups(groups) {
-        return groups.map(group => `
-        <div class="group-container">
-            <div class="group-header">
-                <span class="group-name" data-group-id="${group.id}">${group.name}</span>
-                <ion-icon name="arrow-forward" class="group-arrow" data-group-id="${group.id}"></ion-icon>
-                <button class="rename-group" data-group-id="${group.id}">Rename</button>
-                <button class="delete-group" data-group-id="${group.id}">Delete</button>
-            </div>
-            <!-- Add a container for group details with a unique ID -->
-            <div id="group-details-${group.id}" style="display: none;"></div>
-        </div>
-    `).join('');
+        return '<ion-accordion-group>' + groups.map((group) => `
+            <ion-accordion value="${group.id}" data-group-id="${group.id}" id="group${group.id}">
+                <ion-item slot="header" color="light">
+                    <ion-label>${group.name}</ion-label>
+                    <ion-button size="small" class="rename-group" data-group-id="${group.id}">Rename</ion-button>
+                    <ion-button size="small" color="danger" class="delete-group" data-group-id="${group.id}">Delete</ion-button>
+                </ion-item>
+                <div class="ion-padding" slot="content" id="content-${group.id}">${group.id} Content</div>
+            </ion-accordion>
+    `).join('') + '</ion-accordion-group>';
     }
 
     async createGroup() {
@@ -112,9 +110,21 @@ export default class extends AbstractView {
         }
     }
 
+    // TODO: Have method display user's name rather than their id.
+    // TODO: Add delete button to remove users from groups.
     renderGroupDetails(details) {
         // Implement rendering logic for group details here
-        return `<p>${details.description}</p>`;
+        try {
+            return `<ion-list>` + details.group_members.map((member) => `<ion-item>
+                <ion-label>
+                    id: <ion-badge color="warning">${member.user_id}</ion-badge>
+                    <span style="font-variant: small-caps; font-weight: bold">(${member.role.charAt(0).toUpperCase()}${member.role.slice(1)})</span>
+                </ion-label>
+           </ion-item>`).join('\n') + `</ion-list>`;
+        } catch(ex) {
+            console.log(ex);
+            return '';
+        }
     }
 
     async renameGroup(groupId, newName) {
@@ -172,7 +182,8 @@ export default class extends AbstractView {
 
     async attachEventListeners() {
         document.getElementById('create-group').addEventListener('click', () => {
-            const formContainer = document.getElementById('create-group-form-container');
+            const formContainer = document.getElementById('group-creation');
+            document.getElementById('create-group').style.display = 'none';
             formContainer.style.display = formContainer.style.display === 'none' ? 'block' : 'none';
         });
 
@@ -181,25 +192,11 @@ export default class extends AbstractView {
             e.preventDefault();
             const response = await this.createGroup();
             await this.refreshView();
+            document.getElementById('create-group').style.display = 'inline-block';
+            document.getElementById('group-creation').style.display = 'none';
             return response;
         });
-        // Handle click on arrow to show/hide details
-        const groupArrows = document.querySelectorAll('.group-arrow');
-        groupArrows.forEach(arrow => {
-            arrow.addEventListener('click', async (event) => {
-                const groupId = event.target.dataset.groupId;
-                const groupDetailsContainer = document.getElementById(`group-details-${groupId}`);
-                groupDetailsContainer.style.display = groupDetailsContainer.style.display === 'none' ? 'block' : 'none';
 
-                if (groupDetailsContainer.style.display === 'block') {
-                    // Fetch and display group details when expanding
-                    const detailsResponse = await this.getGroupDetails(groupId);
-                    const detailsJson = await detailsResponse.json();
-                    // Render and append group details to the container
-                    groupDetailsContainer.innerHTML = this.renderGroupDetails(detailsJson);
-                }
-            });
-        });
         // Handle click on "Rename" Button
         const renameButtons = document.querySelectorAll('.rename-group');
         renameButtons.forEach(button => {
@@ -227,5 +224,26 @@ export default class extends AbstractView {
                 }
             });
         });
+
+        // Handle click on arrow to show/hide details
+        const groupList = document.querySelectorAll('ion-accordion');
+        groupList.forEach(groupTab => {
+            groupTab.addEventListener('click', async (event) => {
+                //console.log(arrow);
+                const groupId = groupTab.value;
+                //console.log('groupId: ' + groupId);
+                const groupDetailsContainer = document.getElementById(`content-${groupId}`);
+                //console.log(groupDetailsContainer);
+
+                // Fetch and display group details when expanding
+                const detailsResponse = await this.getGroupDetails(groupId);
+                const detailsJson = await detailsResponse.json();
+                console.log(detailsJson);
+                // Render and append group details to the container
+                groupDetailsContainer.innerHTML = this.renderGroupDetails(detailsJson);
+            });
+        });
+
+
     }
 }
