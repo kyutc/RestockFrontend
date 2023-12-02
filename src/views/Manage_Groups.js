@@ -122,7 +122,9 @@ export default class extends AbstractView {
             // Update the group name through the API
             const response = await Api.updateGroup(groupId, newName);
             const responseData = await response.json();
-
+            if (!response.ok) {
+                throw new Error(responseData.message);
+            }
             if (responseData.result === 'success') {
                 // Update the group object in the local storage
                 const group = new Group(responseData.group);
