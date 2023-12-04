@@ -71,16 +71,14 @@ export default class extends AbstractView {
         }
     }
 
-    attachEventListeners(app) {
+    attachEventListeners() {
         document.getElementById('login-button').addEventListener('click', (e) => {
             e.preventDefault()
             this.submitLoginForm();
-
         });
         document.getElementById('register-button').addEventListener('click', (e) => {
             e.preventDefault()
-            this.submitRegistrationForm(app.register);
-
+            this.submitRegistrationForm();
         });
     }
 }
