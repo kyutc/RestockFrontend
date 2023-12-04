@@ -1,6 +1,7 @@
 import AbstractView from "./AbstractView.js";
 import Api from "../api.js";
 import {navigateTo} from "../index.js";
+import Restock from "../restock.js";
 
 export default class extends AbstractView {
     constructor(params) {
@@ -33,23 +34,8 @@ export default class extends AbstractView {
     }
 
     async logout() {
-        const token = localStorage.getItem('token');
-        if (token) {
-            try {
-                const response = await Api.logout();
-                if (response.ok) {
-                    console.log('Logged out successfully');
-                } else {
-                    console.error('Logout failed: ', response);
-                }
-            } catch (error) {
-                console.error('Error during logout: ', error);
-            }
-        }
-
-        localStorage.removeItem('token');
-        localStorage.removeItem('userId');
-        window.location.href = '/login';
+        Restock.logout();
+        navigateTo('/login');
     }
 
     async deleteAccount() {

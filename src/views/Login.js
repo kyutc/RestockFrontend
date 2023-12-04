@@ -1,8 +1,10 @@
 import AbstractView from "./AbstractView.js";
 import Api from '../api.js';
+import Restock from "../restock.js";
 import {navigateTo} from "../index.js";
 
 export default class extends AbstractView {
+
     constructor(params) {
         super(params);
         this.setTitle("Login");
@@ -42,22 +44,11 @@ export default class extends AbstractView {
         const email = document.getElementById('login-email').value;
         const password = document.getElementById('login-password').value;
 
-        try {
-            const response = await Api.login(email, password);
-            if (response.ok) {
-                const data = await response.json();
-                const userId = data.id;
-                localStorage.setItem('userId', userId);
-
-                const token = data.session;
-                localStorage.setItem('token', token);
-                navigateTo('/pantry');
-            } else {
-                alert('Login failed');
-
-            } 
-        } catch (error) {
-            console.error('Login error: ' , error);
+        const user_is_logged_in = await Restock.login(email, password);
+        if (user_is_logged_in) {
+            navigateTo('/pantry');
+        } else {
+            alert('Login failed');
         }
     }
 
@@ -72,20 +63,15 @@ export default class extends AbstractView {
             return;
         }
 
-        try {
-            const response = await Api.register(email, username, password);
-            if (response.ok) {
-                alert('Registration successful. Please log in.');
-            } else {
-                const data = await response.json();
-                alert(`Registration failed: ${data.message}`);
-            }
-        } catch (error) {
-            console.error('Registration error: ', error);
+        const account_registered = await Restock.register(email, username, password);
+        if (account_registered) {
+            alert('Registration successful. Please log in.');
+        } else {
+            alert('Registration failed');
         }
     }
 
-    attachEventListeners() {
+    attachEventListeners(app) {
         document.getElementById('login-button').addEventListener('click', (e) => {
             e.preventDefault()
             this.submitLoginForm();
@@ -93,7 +79,7 @@ export default class extends AbstractView {
         });
         document.getElementById('register-button').addEventListener('click', (e) => {
             e.preventDefault()
-            this.submitRegistrationForm();
+            this.submitRegistrationForm(app.register);
 
         });
     }

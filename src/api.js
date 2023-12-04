@@ -77,11 +77,14 @@ export default class Api {
      * 
      * @returns {Promise<Response>}
      */
-    static async authTest() {
+    static async authTest(token) {
         const url = this._base_url + "authtest";
         const options = {
             method: "GET",
-            headers: this._headers
+            headers: {
+                ...this._headers,
+                "X-RestockUserApiToken" : token
+            }
         };
         return fetch(url, options);
     }

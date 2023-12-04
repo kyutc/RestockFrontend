@@ -5,9 +5,13 @@ import Settings from "./views/Settings.js";
 import Pantry from "./views/Pantry.js";
 import Shopping_List from "./views/Shopping_List.js";
 import Manage_Groups from "./views/Manage_Groups.js";
+import Restock from "./restock.js";
+
+Restock.init(); // Attempt to resume last session
 
 const pathToRegex = path => new RegExp("^" + path.replace(/\//g, "\\/").replace(/:\w+/g, "(.+)") + "$");
 
+// Todo: document this and its purpose
 const getParams = match => {
     const values = match.result.slice(1);
     const keys = Array.from(match.route.path.matchAll(/:(\w+)/g)).map(result => result[1]);
@@ -17,6 +21,7 @@ const getParams = match => {
     }));
 };
 
+// Invoke router to initialize and render page
 const navigateTo = url => {
     history.pushState(null, null, url);
     router();
