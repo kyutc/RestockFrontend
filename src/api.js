@@ -74,7 +74,8 @@ export default class Api {
 
     /**
      * Test authentication.
-     * 
+     *
+     * @param {string} token
      * @returns {Promise<Response>}
      */
     static async authTest(token) {
@@ -91,15 +92,18 @@ export default class Api {
 
     /**
      * Log user out of the server.
-     * 
+     *
+     * @param {string} token
      * @returns {Promise<Response>}
      */
-    static async logout() {
+    static async logout(token) {
         const url = this._base_url + "session";
-        const token = localStorage.getItem('token');
         const options = {
             method: "DELETE",
-            headers: this._get_headers()
+            headers: {
+                ...this._headers,
+                "X-RestockUserApiToken" : token
+            }
         };
         return fetch(url, options);
     }
@@ -192,55 +196,53 @@ export default class Api {
                 "X-RestockUserApiToken": token
             }
         };
-        const response = await fetch(url, options);
-        const responseData = await response.json();
-        console.log(response, responseData);
-
-        return responseData;
+        return fetch(url, options);
     }
 
     /**
      * Create a new group on the server.
-     * 
+     *
+     * @param {string} token
      * @param {String} name
      * @returns {Promise<Response>}
      */
-    static async createGroup(name) {
+    static async createGroup(token, name) {
         const url = this._base_url + "group";
         const formData = new FormData();
         formData.append('name', name)
 
-        console.log(formData);
-        console.log(JSON.stringify(formData));
         const options = {
             method: "POST",
             body: formData,
-            headers: this._headers
+            headers: {
+                ...this._headers,
+                "X-RestockUserApiToken": token
+            }
         };
         return fetch(url, options);
     }
 
     /**
      * Update details of a specific group.
-     * 
+     *
+     * @param {string} token
      * @param {number} groupId
      * @param {String} groupDetails
      * @returns {Promise<Response>}
      */
-    static async updateGroup(groupId, groupDetails) {
+    static async updateGroup(token, groupId, groupDetails) {
         const groupObj =
         {
             "group_id": groupId,
             "name": groupDetails,
         };
         const url = this._base_url + "group/" + groupId;
-        console.log("new name:", groupObj);
-        console.log("json version of new name:", JSON.stringify(groupObj))
         const options = {
             method: "PUT",
             body: JSON.stringify(groupObj),
             headers: {
                 ...this._headers,
+                "X-RestockUserApiToken": token,
                 "Content-Type": "application/json"
             }
         };
@@ -249,15 +251,19 @@ export default class Api {
 
     /**
      * Delete a specific group from the server.
-     * 
+     *
+     * @param {string} token
      * @param {number} groupId
      * @returns {Promise<Response>}
      */
-    static async deleteGroup(groupId) {
+    static async deleteGroup(token, groupId) {
         const url = this._base_url + "group/" + groupId;
         const options = {
             method: "DELETE",
-            headers: this._headers
+            headers: {
+                ...this._headers,
+                "X-RestockUserApiToken": token
+            }
         };
         return fetch(url, options);
     }
