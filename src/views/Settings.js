@@ -79,8 +79,9 @@ export default class extends AbstractView {
     async renameUser(userId, newName) {
         try {
             // Update the group name through the API
-            const response = await Api.updateUserAccount(userId, newName);
+            const response = await Api.updateUserAccount(userId, { new_username: newName, new_password: ''});
             const responseData = await response.json();
+            console.log(responseData);
 
             alert("User renamed successfully");
             return responseData;

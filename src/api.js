@@ -126,7 +126,8 @@ export default class Api {
     static async updateUserAccount(userId, userDetails) {
         const userObj =
             {
-                "new_name": userDetails,
+                "new_username": userDetails.new_username,
+                "new_password": userDetails.new_password,
             };
         const url = this._base_url + "user/" + userId;
         const options = {
