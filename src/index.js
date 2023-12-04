@@ -7,8 +7,6 @@ import Shopping_List from "./views/Shopping_List.js";
 import Manage_Groups from "./views/Manage_Groups.js";
 import Restock from "./restock.js";
 
-Restock.init(); // Attempt to resume last session
-
 const pathToRegex = path => new RegExp("^" + path.replace(/\//g, "\\/").replace(/:\w+/g, "(.+)") + "$");
 
 // Todo: document this and its purpose
@@ -115,7 +113,10 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     });
 
-    router();
+});
+
+Restock.init().then(resuming_session => { // Attempt to resume last session
+    router(); // Moved into promise resolution to give time for state to be loaded before attempting to render pages
 });
 
 //For letting pages navigate to other pages

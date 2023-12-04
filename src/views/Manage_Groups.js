@@ -3,13 +3,18 @@ import Api from "../api.js";
 import Group from "..//models/group.js";
 import GroupMember from "..//models/group_member.js";
 import restockdb from "../restockdb.js";
+import Restock from "../restock.js";
 
 export default class extends AbstractView {
+    /** @type {Array<Group>} */
+    #groups;
+
     constructor(params) {
         super(params);
         this.setTitle("Manage Groups");
         this.api = new Api();
         this.selectedGroupId = null; // Track the currently selected group
+        this.#groups = Restock.getGroups();
     }
 
     isGroupSelected() {
@@ -23,7 +28,7 @@ export default class extends AbstractView {
     }
 
     async getHtml() {
-        const groups = await this.fetchGroups();
+        const groups = this.#groups;
         const groupsHtml = this.renderGroups(groups);
 
         return `
@@ -48,16 +53,6 @@ export default class extends AbstractView {
     `;
     }
 
-    async fetchGroups() {
-        try {
-            const groups = await Api.getGroups();
-            return groups;
-        } catch (error) {
-            console.error('Unable to display groups: ', error);
-            return [];
-        }
-    }
-
     renderGroups(groups) {
         return '<ion-accordion-group>' + groups.map((group) => `
             <ion-accordion value="${group.id}" data-group-id="${group.id}" id="group${group.id}">
@@ -75,33 +70,16 @@ export default class extends AbstractView {
         const groupNameInput = document.getElementById('group-name');
         const groupName = groupNameInput.value;
 
-        try {
-            const response = await Api.createGroup(groupName);
-            const responseData = await response.json();
-
-            if (responseData.result === 'success') {
-                // Instantiate a Group object
-                const group = new Group(responseData.group)
-                const groupId = group.id;
-                // Set the currently selected group to the new group.
-                this.setSelectedGroupId(groupId);
-                // Instantiate a GroupMember object
-                const group_member = new GroupMember(responseData.group_member)
-                // Save the group and group member information to the DB
-                await restockdb.putGroup(group);
-                await restockdb.putGroupMember(group_member);
-            }
-
-
-
+        const group_was_created = await Restock.createGroup(groupName);
+        if (group_was_created) {
             alert("Group created successfully");
-            return response;
-        } catch (error) {
+        } else {
             console.error('Unable to create group: ', error);
         }
+
     }
 
-    async getGroupDetails(groupId) {
+    async getGroupDetails(groupId) { // TODO
         try {
             const response = await Api.getGroupDetails(groupId);
             return response;
@@ -128,28 +106,17 @@ export default class extends AbstractView {
     }
 
     async renameGroup(groupId, newName) {
-        try {
-            // Update the group name through the API
-            const response = await Api.updateGroup(groupId, newName);
-            const responseData = await response.json();
-            if (!response.ok) {
-                throw new Error(responseData.message);
-            }
-            if (responseData.result === 'success') {
-                // Update the group object in the local storage
-                const group = new Group(responseData.group);
-                await restockdb.putGroup(group);
-            }
-
+        const group_was_updated = await Restock.updateGroup(groupId, newName);
+        if (group_was_updated) {
             alert("Group renamed successfully");
-            return response;
-        } catch (error) {
-            console.error('Unable to rename group: ', error);
-            alert(`Unable to rename group: ${error.message}`);
+        } else {
+            alert("Unable to rename group");
         }
     }
 
     async deleteGroup(groupId) {
+        const group_was_deleted = await Restock.deleteGroup(groupId);
+
         try {
             // Delete the group through the API
             const response = await Api.deleteGroup(groupId);
@@ -169,7 +136,7 @@ export default class extends AbstractView {
 
     async refreshView() {
         // Fetch and render the updated list of groups
-        const groups = await this.fetchGroups();
+        const groups = this.#groups;
         const groupsHtml = this.renderGroups(groups);
 
         // Update the groups list container
@@ -177,10 +144,15 @@ export default class extends AbstractView {
         groupsListContainer.innerHTML = groupsHtml;
 
         // Reattach event listeners for the updated elements
-        await this.attachEventListeners();
+        await this.#attachModifyGroupEventListeners();
     }
 
     async attachEventListeners() {
+        this.#attachCreateGroupEventListeners();
+        this.#attachModifyGroupEventListeners()
+    }
+
+    #attachCreateGroupEventListeners() {
         document.getElementById('create-group').addEventListener('click', () => {
             const formContainer = document.getElementById('group-creation');
             document.getElementById('create-group').style.display = 'none';
@@ -196,14 +168,17 @@ export default class extends AbstractView {
             document.getElementById('group-creation').style.display = 'none';
             return response;
         });
+    }
 
+    #attachModifyGroupEventListeners() {
         // Handle click on "Rename" Button
         const renameButtons = document.querySelectorAll('.rename-group');
         renameButtons.forEach(button => {
             button.addEventListener('click', async (event) => {
+                event.stopPropagation();
                 const groupId = event.target.dataset.groupId;
                 const newName = prompt("Enter the new name for the group:");
-                if (newName !== null) {
+                if (!!newName) {
                     await this.renameGroup(groupId, newName);
                     // Refresh the view after renaming
                     await this.refreshView();
@@ -215,6 +190,7 @@ export default class extends AbstractView {
         const deleteButtons = document.querySelectorAll('.delete-group');
         deleteButtons.forEach(button => {
             button.addEventListener('click', async (event) => {
+                event.stopPropagation();
                 const groupId = event.target.dataset.groupId;
                 const confirmDelete = confirm("Are you sure you want to delete this group?");
                 if (confirmDelete) {
@@ -243,7 +219,6 @@ export default class extends AbstractView {
                 groupDetailsContainer.innerHTML = this.renderGroupDetails(detailsJson);
             });
         });
-
 
     }
 }
