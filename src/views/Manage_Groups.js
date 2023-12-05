@@ -19,6 +19,18 @@ export default class ManageGroups extends HTMLElement {
         this.attachEventListeners();
     }
 
+    async Toast(message, color = 'success') {
+        const toast = document.createElement('ion-toast');
+        toast.message = message;
+        toast.duration = 2000;
+        toast.color = color;
+        document.body.appendChild(toast);
+        return toast.present();
+    }
+    async errorToast(message) {
+        return this.Toast(message, 'danger');
+    }
+
     render() {
         this.innerHTML = `
             <ion-header>
@@ -103,8 +115,9 @@ export default class ManageGroups extends HTMLElement {
 
         const group_was_created = await Restock.createGroup(groupName);
         if (group_was_created) {
-            alert("Group created successfully");
+            await this.Toast("Group created successfully");
         } else {
+            await this.errorToast('Unable to create group');
             console.error('Unable to create group: ', error);
         }
 
@@ -141,9 +154,9 @@ export default class ManageGroups extends HTMLElement {
     async renameGroup(groupId, newName) {
         const group_was_updated = await Restock.updateGroup(groupId, newName);
         if (group_was_updated) {
-            alert("Group renamed successfully");
+            await this.Toast("Group renamed successfully");
         } else {
-            alert("Unable to rename group");
+            await this.errorToast("Unable to rename group");
         }
     }
 
@@ -160,9 +173,10 @@ export default class ManageGroups extends HTMLElement {
                 await restockdb.deleteGroup(groupId);
             }
 
-            alert("Group deleted successfully");
+            await this.Toast("Group deleted successfully");
             return response;
         } catch (error) {
+            await this.errorToast('Unable to delete group');
             console.error('Unable to delete group: ', error);
         }
     }
