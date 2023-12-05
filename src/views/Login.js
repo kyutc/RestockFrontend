@@ -9,6 +9,18 @@ export default class LoginPage extends HTMLElement {
         this.attachEventListeners();
     }
 
+    async Toast(message, color = 'success') {
+        const toast = document.createElement('ion-toast');
+        toast.message = message;
+        toast.duration = 2000;
+        toast.color = color;
+        document.body.appendChild(toast);
+        return toast.present();
+    }
+    async errorToast(message) {
+        return this.Toast(message, 'danger');
+    }
+
     render() {
         this.innerHTML = `
             <ion-header>
@@ -67,9 +79,10 @@ export default class LoginPage extends HTMLElement {
 
         const user_is_logged_in = await Restock.login(email, password);
         if (user_is_logged_in) {
+            await this.Toast('Login successful');
             navigateTo("/");
         } else {
-            alert('Login failed');
+            await this.errorToast('Login failed');
         }
     }
 
@@ -80,16 +93,19 @@ export default class LoginPage extends HTMLElement {
         const confirmPassword = document.getElementById('register-password-confirm').value;
 
         if (password !== confirmPassword) {
-            alert('Passwords do not match');
+            await this.errorToast('Passwords do not match');
             return;
         }
 
         const account_registered = await Restock.register(email, username, password);
         if (account_registered) {
-            alert('Registration successful. Please log in.');
-            // Todo: clear inputs
+            await this.Toast('Registration successful. Please log in.');
+            document.getElementById('register-email').value = '';
+            document.getElementById('register-username').value = '';
+            document.getElementById('register-password').value = '';
+            document.getElementById('register-password-confirm').value = '';
         } else {
-            alert('Registration failed');
+            await this.errorToast('Registration failed');
         }
     }
 
