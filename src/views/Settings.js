@@ -9,6 +9,18 @@ export default class SettingsPage extends HTMLElement {
         this.attachEventListeners();
     }
 
+    async Toast(message, color = 'success') {
+        const toast = document.createElement('ion-toast');
+        toast.message = message;
+        toast.duration = 2000;
+        toast.color = color;
+        document.body.appendChild(toast);
+        return toast.present();
+    }
+    async errorToast(message) {
+        return this.Toast(message, 'danger');
+    }
+
     render() {
         this.innerHTML = `
             <ion-header>
@@ -42,10 +54,11 @@ export default class SettingsPage extends HTMLElement {
         const successfully_logged_out = await Restock.logout();
         if (!successfully_logged_out) {
             // Something went wrong
-            alert("Unable to contact server. Please try again later.");
+            await this.errorToast("Unable to contact server. Please try again later.");
             return;
         }
         navigateTo("/");
+        await this.Toast('Logged out successfully');
         // const router = document.querySelector('ion-router');
         // if (router) {
         //     router.push("/");
@@ -68,8 +81,10 @@ export default class SettingsPage extends HTMLElement {
                     localStorage.removeItem('token');
                     localStorage.removeItem('userId');
                     window.location.href = '/login';
+                    await this.Toast('Account deleted successfully');
                 } else {
                     console.error('Account deletion failed: ', response);
+                    await this.errorToast('Account deletion failed');
                 }
             } catch (error) {
                 console.error('Error during account deletion: ', error);
@@ -84,7 +99,11 @@ export default class SettingsPage extends HTMLElement {
             const responseData = await response.json();
             console.log(responseData);
 
-            alert("User renamed successfully");
+            if (response.ok) {
+                await this.Toast("User renamed successfully");
+            } else {
+                await this.errorToast(`Unable to rename user`);
+            }
             return responseData;
         } catch (error) {
             console.error('Unable to rename user: ', error);
