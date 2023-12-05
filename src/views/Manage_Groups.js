@@ -1,7 +1,4 @@
-import AbstractView from "./AbstractView.js";
 import Api from "../api.js";
-import Group from "..//models/group.js";
-import GroupMember from "..//models/group_member.js";
 import restockdb from "../restockdb.js";
 import Restock from "../restock.js";
 
@@ -98,6 +95,7 @@ export default class ManageGroups extends HTMLElement {
                 </ion-accordion>
     `).join('') + '</ion-accordion-group>';
     }
+
     //
     async createGroup() {
         const groupNameInput = document.getElementById('group-name');
@@ -111,6 +109,7 @@ export default class ManageGroups extends HTMLElement {
         }
 
     }
+
     //
     async getGroupDetails(groupId) { // TODO
         try {
@@ -120,6 +119,7 @@ export default class ManageGroups extends HTMLElement {
             console.error('Unable to access group details: ', error);
         }
     }
+
     //
     // // TODO: Have method display user's name rather than their id.
     // // TODO: Add delete button to remove users from groups.

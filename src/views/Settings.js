@@ -1,6 +1,3 @@
-// import AbstractView from "./AbstractView.js";
-// import Api from "../api.js";
-// import {navigateTo} from "../index.js";
 import Restock from "../restock.js";
 import {navigateTo} from "../index.js";
 
