@@ -1,124 +1,110 @@
 import Login from "./views/Login.js";
-import History from "./views/History.js";
-import Recipes from "./views/Recipes.js";
+// import History from "./views/History.js";
+// import Recipes from "./views/Recipes.js";
 import Settings from "./views/Settings.js";
 import Pantry from "./views/Pantry.js";
-import Shopping_List from "./views/Shopping_List.js";
+// import Shopping_List from "./views/Shopping_List.js";
 import Manage_Groups from "./views/Manage_Groups.js";
 import Restock from "./restock.js";
 
-const pathToRegex = path => new RegExp("^" + path.replace(/\//g, "\\/").replace(/:\w+/g, "(.+)") + "$");
+Restock.init();
+let router;
+/**
+ * On index.html, this is the <app-root></app-root> component.
+ * When initialized, the [connectedCallback] method is invoked once.
+ * Logic dependent on subsequent accesses to the page must be set in motion
+ * using an event listener.
+ */
+class AppRoot extends HTMLElement {
+    animated = false;
 
-// Todo: document this and its purpose
-const getParams = match => {
-    const values = match.result.slice(1);
-    const keys = Array.from(match.route.path.matchAll(/:(\w+)/g)).map(result => result[1]);
-
-    return Object.fromEntries(keys.map((key, i) => {
-        return [key, values[i]];
-    }));
-};
-
-// Invoke router to initialize and render page
-const navigateTo = url => {
-    history.pushState(null, null, url);
-    router();
-};
-
-const router = async () => {
-    const routes = [
-        { path: "/", view: Login },
-        { path: "/pantry", view: Pantry },
-        { path: "/shopping_list", view: Shopping_List },
-        { path: "/recipes", view: Recipes },
-        { path: "/history", view: History },
-        { path: "/settings", view: Settings },
-        { path: "/manage_groups", view: Manage_Groups },
-    ];
-
-    // Test each route for potential match
-    const potentialMatches = routes.map(route => {
-        return {
-            route: route,
-            result: location.pathname.match(pathToRegex(route.path))
-        };
-    });
-
-    let match = potentialMatches.find(potentialMatch => potentialMatch.result !== null);
-
-    // Default page if URL does not match any known routes
-    if (!match) {
-        match = {
-            route: routes[0],
-            result: [location.pathname]
-        };
+    /**
+     * Invoked when this element is embedded into the DOM
+     */
+    connectedCallback() {
+        console.log("DEBUG: Loading AppRoot");
+        this.render();
+        this.updateRoutes();
     }
 
-    // Check if a group_id is selected before rendering "Pantry" and "Shopping_List" views
-    const isGroupSelected = (localStorage.getItem('selectedGroupId') != null);
+    render() {
+        // Todo: mobile/desktop
+        const default_page = "login-page";
+        // const default_component = active_session ? "pantry" : "login"
 
-    if ((match.route.path === "/pantry" || match.route.path === "/shopping_list") && !isGroupSelected) {
-        // Redirect to the default view or another view of your choice
-        navigateTo("/");
-        return;
+        this.innerHTML = `
+            <ion-app>
+                <ion-router use-hash="false"></ion-router>
+
+                <ion-split-pane content-id="menu-content" when="md">
+                    <ion-menu content-id="menu-content">
+                        <ion-toolbar>
+                            <ion-title>Menu</ion-title>
+                        </ion-toolbar>
+                        <ion-content class="ion-padding">
+                            <ion-list>
+                                <ion-item button href="/">Home</ion-item>
+                                <ion-item button href="/settings">Settings</ion-item>
+                            </ion-list>
+                        </ion-content>
+                    </ion-menu>
+                    <ion-router-outlet id="menu-content" animated="${this.animated}"></ion-router-outlet>
+                </ion-split-pane>
+                    
+<!--                <ion-nav id="main"></ion-nav>-->
+            </ion-app>`;
+        router = document.querySelector('ion-router');
     }
 
-    const view = new match.route.view(getParams(match));
-
-    document.querySelector("#app").innerHTML = await view.getHtml();
-
-    if (view.attachEventListeners) {
-        view.attachEventListeners();
-    }
-
-    // Get the "Pantry" and "Shopping List" links by their data-link attribute
-    const pantryLink = document.querySelector('[data-link="/pantry"]');
-    const shoppingListLink = document.querySelector('[data-link="/shopping_list"]');
-
-    // Update the visibility of the links based on whether a group is selected
-    if (!isGroupSelected) {
-        // If no group is selected, hide the links
-        pantryLink.style.display = "none";
-        shoppingListLink.style.display = "none";
-    } else {
-        // Otherwise, show the links
-        pantryLink.style.display = "block";
-        shoppingListLink.style.display = "block";
-    }
-
-    const navLinks = document.querySelectorAll(".nav__link");
-    navLinks.forEach(link => {
-        link.classList.remove("active");
-        if (link.href === window.location.href) {
-            link.classList.add("active");
+    /**
+     * The Ionic router will automatically load content into the <ionic-router-outlet> after matching
+     * the URL to an existing <ion-route>.
+     * Depending on whether the user is logged in, all routes will redirect to the login page.
+     * If the user is logged in and attempts to load the login page, they'll be redirected to the 'home' page.
+     * @return {string}
+     */
+    updateRoutes() {
+        const active_session = Restock.hasActiveSession();
+        const default_page = "pantry"; // TODO: Conditional desktop/mobile
+        let routes;
+        if (!active_session) {
+            // user is not logged in
+            routes = `
+                    <ion-route url="/login" component="login-page"></ion-route>
+                    <ion-route-redirect from="/*" to="/login"></ion-route-redirect>
+                `;
+        } else {
+            routes = `
+                    <ion-route url="/" component="${default_page}"></ion-route>
+                    <ion-route-redirect from="/login" to="/"></ion-route-redirect>
+                    <ion-route url="/settings" component="settings-page"></ion-route>
+                    <ion-route url="/manage_groups" component="manage-groups-page"></ion-route>
+                `;
         }
-    });
-};
-window.addEventListener("popstate", router);
 
-document.addEventListener("DOMContentLoaded", () => {
-    document.body.addEventListener("click", e => {
-        if (e.target.matches("[data-link]")) {
-            e.preventDefault();
-            navigateTo(e.target.href);
+        if (!router) {
+            // Router isn't in the page
+            window.location.replace("/");
+            return;
         }
-    });
+        router.innerHTML = routes;
+    }
+}
 
+/**
+ * Links the element tag to this class.
+ */
+customElements.define('app-root', AppRoot);
 
-    const navLinks= document.querySelectorAll(".nav__link");
-    navLinks.forEach(link => {
-        link.addEventListener("click", function() {
-            navLinks.forEach(link => link.classList.remove("active"));
-            this.classList.add("active");
-        });
-    });
+/**
+ * Updates the routes defined in the router before attempting to push a new route.
+ * @param href
+ */
+function navigateTo(href) {
+    const app_root = document.querySelector('app-root');
+    app_root.updateRoutes();
+    router.push(href);
+}
 
-});
-
-Restock.init().then(resuming_session => { // Attempt to resume last session
-    router(); // Moved into promise resolution to give time for state to be loaded before attempting to render pages
-});
-
-//For letting pages navigate to other pages
-export {navigateTo};
+export {navigateTo}
 

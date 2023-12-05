@@ -1,42 +1,65 @@
-import AbstractView from "./AbstractView.js";
-import Api from '../api.js';
+// import AbstractView from "./AbstractView.js";
+// import Api from '../api.js';
 import Restock from "../restock.js";
 import {navigateTo} from "../index.js";
 
-export default class extends AbstractView {
+export default class LoginPage extends HTMLElement {
 
-    constructor(params) {
-        super(params);
-        this.setTitle("Login");
-        this.api = new Api();
+    connectedCallback() {
+        console.log("DEBUG: login.js -- Initializing login page")
+        this.render();
+        this.attachEventListeners();
     }
 
-    async getHtml() {
-        return `
-            <h1>Login</h1>
-            <p>Enter your email and password:</p>
-            <form id="loginForm">
-                <label for="login-email">Email:</label><br>
-                <input type="email" id="login-email" name="email"><br><br>
-                    <label for="login-password">Password:</label><br>
-                    <input type="password" id="login-password" name="password"><br><br>
-                    <ion-button shape="round" size="small" color="primary" fill="outline" id="login-button">Login</ion-button>
-            </form>
-            
-            <br><hr>
-            
-            <p>Alternatively, you can create an account:</p>
-            <form id="registrationForm">
-                <label for="email">Email:</label><br>
-                <input type="email" id="register-email" name="email" required><br><br>
-                <label for="register-username">Username:</label><br>
-                <input type="text" id="register-username" name="username"><br><br>
-                    <label for="register-password">Password:</label><br>
-                    <input type="password" id="register-password" name="password"><br><br>
-                    <label for="register-password-confirm">Confirm Password:</label><br>
-                    <input type="password" id="register-password-confirm" name="password-confirm"><br><br>
-                    <ion-button shape="round" size="small" color="primary" fill="outline" id="register-button">Register</ion-button>
-            </form>
+    render() {
+        this.innerHTML = `
+            <ion-header>
+                <ion-toolbar>
+                    <ion-title>Login/Registration</ion-title>
+                </ion-toolbar>
+            </ion-header>
+            <ion-content>
+                <ion-card>
+                    <ion-row>
+                        <ion-card-title>Login</ion-card-title>
+                        <ion-card-content>
+                            <ion-list>
+                                <ion-item>
+                                    <ion-input label="E-mail" label-placement="floating" type="email" id="login-email"></ion-input>
+                                </ion-item>
+                                <ion-item>
+                                    <ion-input label="Password" label-placement="floating" type="password" id="login-password"></ion-input>
+                                </ion-item>
+                                <ion-item>
+                                <ion-button shape="round" size="small" color="primary" fill="outline" id="login-button">Login</ion-button>
+                                </ion-item>
+                            </ion-list>
+                        </ion-card-content>
+                    </ion-row>
+                </ion-card>
+                <ion-card>
+                    <ion-row>
+                        <ion-card-title>Register</ion-card-title>
+                        <ion-card-content>
+                            <ion-list>
+                                <ion-item>
+                                    <ion-input label="E-mail" label-placement="floating" type="email" id="register-email"></ion-input>
+                                </ion-item>
+                                <ion-item>
+                                    <ion-input label="Username" label-placement="floating" type="" id="register-username"></ion-input>
+                                </ion-item>
+                                <ion-item>
+                                    <ion-input label="Password" label-placement="floating" type="password" id="register-password"></ion-input>
+                                </ion-item>
+                                <ion-item>
+                                    <ion-input label="Confirm password" label-placement="floating" type="password" id="register-password-confirm"></ion-input>
+                                </ion-item>
+                                <ion-button shape="round" size="small" color="primary" fill="outline" id="register-button">Register</ion-button>
+                            </ion-list>
+                        </ion-card-content>
+                    </ion-row>
+                </ion-card>
+            </ion-content>
         `;
     }
 
@@ -46,7 +69,7 @@ export default class extends AbstractView {
 
         const user_is_logged_in = await Restock.login(email, password);
         if (user_is_logged_in) {
-            navigateTo('/pantry');
+            navigateTo("/");
         } else {
             alert('Login failed');
         }
@@ -66,12 +89,14 @@ export default class extends AbstractView {
         const account_registered = await Restock.register(email, username, password);
         if (account_registered) {
             alert('Registration successful. Please log in.');
+            // Todo: clear inputs
         } else {
             alert('Registration failed');
         }
     }
 
     attachEventListeners() {
+        console.log("DEBUG: login.attachEventListeners")
         document.getElementById('login-button').addEventListener('click', (e) => {
             e.preventDefault()
             this.submitLoginForm();
@@ -82,6 +107,8 @@ export default class extends AbstractView {
         });
     }
 }
+
+customElements.define('login-page', LoginPage);
 
 
  

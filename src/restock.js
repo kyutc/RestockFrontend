@@ -3,11 +3,14 @@ import User from "./models/user.js";
 import Group from "./models/group.js"
 import GroupMember from "./models/group_member.js";
 import Item from "./models/item.js";
-import Action_log from "./models/action_log.js";
+import ActionLog from "./models/action_log.js";
 
 import Api from "./api.js";
 
 export default class {
+
+    /** @type {boolean} */
+    static #initialized = false;
 
     /** @type {string} The string token for the current user's session. Found as 'token' in localStorage */
     static #session;
@@ -18,6 +21,15 @@ export default class {
     /** @type {Array<Group>} */
     static #groups = [];
 
+    /** @type {Array<GroupMember>} */
+    static #group_members = [];
+
+    /** @type {Array<Item>} indexed by group_id*/
+    static #items = [];
+
+    /** @type {Array<ActionLog>} */
+    static #action_logs = [];
+
     /** @type {number} The id for the last viewed Group. Defaults to  */
     static #last_used_group_id;
 
@@ -27,14 +39,31 @@ export default class {
     ///////////
 
     /**
+     * Check if the app has finished setting up
+     * @return {boolean}
+     */
+    static isInitialized() { return this.#initialized; }
+
+    /**
      * Check if there's an active session.
      * @return {boolean}
      */
     static hasActiveSession() { return !!this.#session; }
 
+    /**
+     * Returns the last group selected by this user.
+     * @return {number|null}
+     */
+    static getCurrentGroup() {return this.#groups.find( group => group.id === this.#last_used_group_id) ?? null}
+
+    /**
+     * Returns an array of all the groups for this user.
+     * @return {Array<Group>}
+     */
     static getGroups() { return this.#groups; }
 
     static async init() {
+        if (this.#initialized) return true;
         const session = this.#session = localStorage.getItem('token') ?? false;
         if (!session) {
             console.log("DEBUG: Restock.init -- No active session")
@@ -46,25 +75,29 @@ export default class {
             this.#reset();
             return false;
         } // The current session is invalid.
+        const user_data = {
+            "id": localStorage.getItem('user_id') ?? "10000", // TODO
+            "name": localStorage.getItem('user_name') ?? "MrFakeUserMan" // TODO
+        };
+        // if (!!user_data.id || !!user_data.name) {
+            // Todo: Create endpoint for getting the current user's details
+            // user_data = getUserDetails
+        // }
+        const user = this.#user = new User(user_data);
+        // await user.save(); // TODO
         console.log("DEBUG: Restock.init -- Initialized application state")
         await this.#populateGroupsForThisUser();
         console.log("DEBUG: Restock.init -- Populated groups for this user", this.#groups);
-        return true;
+        this.#last_used_group_id = localStorage.getItem('last_used_group_id')
+            ?? this.#groups.find( g => true).id
+            ?? null
+        ;
+        return this.#initialized = true;
     }
 
     static async refreshUserData() {
         // hit user details endpoint, update user object
     }
-
-    /*
-    Login
-    Check if user session is stored in localstorage
-    hit authtest endpoint, initialize static properties
-        if authtest fails, log out -- clear session info and redirect to login page
-    hit get user groups endpoint
-    if the localstorage value for last-used-group_id matches one of the groups, set it in this class - this is the default group to show
-        otherwise pick the lowest group_id
-     */
 
     /**
      * Attempt to register a new user account with the server.
@@ -132,6 +165,43 @@ export default class {
         return true;
     }
 
+    /**
+     * Get a full disclosure of a group's associated tables.
+     * @param id
+     * @return {Promise<boolean>}
+     */
+    static async getGroupDetails(id)  {
+        const response = await Api.getGroupDetails(id);
+        if (!response.ok) {
+            const body = await response.text();
+            console.log("DEBUG: Restock.getGroupDetails -- Failed to retrieve details", body, {group_id: id});
+            return false;
+        }
+        console.log("DEBUG: Restock.getGroupDetails -- Successfully retrieved details");
+        const data = await response.json();
+        const group = this.#groups.find(group => group.id === id);
+        // group.save()
+        const group_members = this.#group_members[id] = data.group_members.map(group_member_data => {
+            const group_member = new GroupMember(group_member_data);
+            // group_member.save()
+            return group_member;
+        });
+        const items = this.#items[id] = data.items
+            .map(item_data => {
+                const item = new Item(item_data)
+                // item.save()
+                return item;
+            })
+            .sort((a, b) => a.localeCompare(b, 'en', { sensitivity: 'base' }))
+        ;
+        const action_logs = this.#action_logs[id] = data.action_logs.map(action_log_data => {
+            const action_log = new ActionLog(action_log_data);
+            // action_log.save()
+            return action_log;
+        });
+        console.log(`DEBUG: Restock.getGroupDetails -- Populated entries for Group ${id}`, group_members, items, action_logs);
+        return true;
+    }
 
     static async createGroup(name) {
         const response = await Api.createGroup(this.#session, name);
@@ -195,7 +265,11 @@ export default class {
         }
         console.log("DEBUG: Restock.getGroups -- Fetched user groups");
         const data = await response.json(); // Array of data
-        this.#groups = data.map(group => new Group(group)); // Sort by id
+        this.#groups.length = 0; // Preserve references to the original array
+        data.forEach(group_data => {
+            const group = new Group(group_data);
+            this.#groups.push(group);
+        }); // Sort by id
         // restockdb.putGroup(s)
     }
 
@@ -210,7 +284,11 @@ export default class {
      */
     static #reset() {
         console.log("DEBUG: Restock.reset -- Clearing localStorage values");
-        this.#session = this.#user = this.#groups = this.#last_used_group_id = false;
+        this.#initialized = false;
+        this.#session = null;
+        this.#user = null;
+        this.#groups.length = 0;
+        this.#last_used_group_id = null;
         localStorage.clear();
     }
 }

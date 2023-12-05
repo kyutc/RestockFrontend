@@ -5,67 +5,100 @@ import GroupMember from "..//models/group_member.js";
 import restockdb from "../restockdb.js";
 import Restock from "../restock.js";
 
-export default class extends AbstractView {
+export default class ManageGroups extends HTMLElement {
+
     /** @type {Array<Group>} */
     #groups;
 
-    constructor(params) {
-        super(params);
-        this.setTitle("Manage Groups");
-        this.api = new Api();
-        this.selectedGroupId = null; // Track the currently selected group
+    /** @type {Group} */
+    #selected_group = null; // Track the currently selected group
+
+    connectedCallback() {
+        console.log("DEBUG: Loading Manage Groups", this.#groups)
         this.#groups = Restock.getGroups();
+        this.#selected_group = Restock.getCurrentGroup();
+
+        this.render();
+        this.attachEventListeners();
     }
 
-    isGroupSelected() {
-        return this.selectedGroupId !== null;
+    render() {
+        this.innerHTML = `
+            <ion-header>
+                <ion-toolbar>
+                    <ion-title>Manage Groups</ion-title>
+                </ion-toolbar>
+            </ion-header>
+            <ion-content>
+                <ion-card>
+                    <ion-button size="small" type="submit" id="create-group">Create Group</ion-button>
+                    <!-- Form to create a new group -->
+                    <ion-grid id="group-creation" style="display: none">
+                        <ion-row>
+                            <ion-col><ion-input label="Enter Group Name" label-placement="floating" fill="solid" id="group-name" required></ion-input></ion-col>
+                            <ion-col><ion-button shape="square" size="medium" type="submit" clear id="submit-group">Submit</ion-button></ion-col>
+                        </ion-row>
+                    </ion-grid>
+                </ion-card>
+                <ion-card>
+                    ${this.renderGroups()}
+                </ion-card>
+            </ion-content>
+        `;
     }
 
-    // TODO Implement means of selecting group id
-    setSelectedGroupId(groupId){
-        this.selectedGroupId = groupId;
-        localStorage.setItem('selectedGroupId', groupId);
-    }
+    // isGroupSelected() {
+    //     return this.selectedGroupId !== null;
+    // }
+    //
+    // // TODO Implement means of selecting group id
+    // setSelectedGroupId(groupId){
+    //     this.selectedGroupId = groupId;
+    //     localStorage.setItem('selectedGroupId', groupId);
+    // }
 
-    async getHtml() {
-        const groups = this.#groups;
-        const groupsHtml = this.renderGroups(groups);
-
-        return `
-        <h1>Manage Groups</h1>
-
-        <ion-button size="small" type="submit" id="create-group">Create Group</ion-button>
-        
-        <!-- Form to create a new group -->          
-        <ion-grid id="group-creation" style="display: none">
-            <ion-row>
-                <ion-col><ion-input label="Enter Group Name" label-placement="floating" fill="solid" id="group-name" required></ion-input></ion-col>
-                <ion-col><ion-button shape="square" size="medium" type="submit" clear id="submit-group">Submit</ion-button></ion-col>
-            </ion-row>
-        </ion-grid>
-        
-        <section id="group-management">
-            <!-- List of Existing groups -->
-            <div id="groups-list">
-                ${groupsHtml}
-            </div>
-        </section>
-    `;
-    }
-
-    renderGroups(groups) {
-        return '<ion-accordion-group>' + groups.map((group) => `
-            <ion-accordion value="${group.id}" data-group-id="${group.id}" id="group${group.id}">
-                <ion-item slot="header" color="light">
-                    <ion-label>${group.name}</ion-label>
-                    <ion-button size="small" class="rename-group" data-group-id="${group.id}">Rename</ion-button>
-                    <ion-button size="small" color="danger" class="delete-group" data-group-id="${group.id}">Delete</ion-button>
-                </ion-item>
-                <div class="ion-padding" slot="content" id="content-${group.id}">${group.id} Content</div>
-            </ion-accordion>
+    // async getHtml() {
+    //     const groups = this.#groups;
+    //     const groupsHtml = this.renderGroups(groups);
+    //
+    //     return `
+    //     <h1>Manage Groups</h1>
+    //
+    //     <ion-button size="small" type="submit" id="create-group">Create Group</ion-button>
+    //
+    //     <!-- Form to create a new group -->
+    //     <ion-grid id="group-creation" style="display: none">
+    //         <ion-row>
+    //             <ion-col><ion-input label="Enter Group Name" label-placement="floating" fill="solid" id="group-name" required></ion-input></ion-col>
+    //             <ion-col><ion-button shape="square" size="medium" type="submit" clear id="submit-group">Submit</ion-button></ion-col>
+    //         </ion-row>
+    //     </ion-grid>
+    //
+    //     <section id="group-management">
+    //         <!-- List of Existing groups -->
+    //         <div id="groups-list">
+    //             ${groupsHtml}
+    //         </div>
+    //     </section>
+    // `;
+    // }
+    //
+    renderGroups() {
+        const groups = Restock.getGroups();
+        console.log(groups)
+        return '<ion-accordion-group>'
+            + groups.map((group) => `
+                <ion-accordion value="${group.id}" data-group-id="${group.id}" id="group${group.id}">
+                    <ion-item slot="header" color="light">
+                        <ion-label>${group.name}</ion-label>
+                        <ion-button size="small" class="rename-group" data-group-id="${group.id}">Rename</ion-button>
+                        <ion-button size="small" color="danger" class="delete-group" data-group-id="${group.id}">Delete</ion-button>
+                    </ion-item>
+                    <div class="ion-padding" slot="content" id="content-${group.id}">${group.id} Content</div>
+                </ion-accordion>
     `).join('') + '</ion-accordion-group>';
     }
-
+    //
     async createGroup() {
         const groupNameInput = document.getElementById('group-name');
         const groupName = groupNameInput.value;
@@ -78,7 +111,7 @@ export default class extends AbstractView {
         }
 
     }
-
+    //
     async getGroupDetails(groupId) { // TODO
         try {
             const response = await Api.getGroupDetails(groupId);
@@ -87,24 +120,24 @@ export default class extends AbstractView {
             console.error('Unable to access group details: ', error);
         }
     }
-
-    // TODO: Have method display user's name rather than their id.
-    // TODO: Add delete button to remove users from groups.
-    renderGroupDetails(details) {
-        // Implement rendering logic for group details here
-        try {
-            return `<ion-list>` + details.group_members.map((member) => `<ion-item>
-                <ion-label>
-                    id: <ion-badge color="warning">${member.user_id}</ion-badge>
-                    <span style="font-variant: small-caps; font-weight: bold">(${member.role.charAt(0).toUpperCase()}${member.role.slice(1)})</span>
-                </ion-label>
-           </ion-item>`).join('\n') + `</ion-list>`;
-        } catch(ex) {
-            console.log(ex);
-            return '';
-        }
-    }
-
+    //
+    // // TODO: Have method display user's name rather than their id.
+    // // TODO: Add delete button to remove users from groups.
+    // renderGroupDetails(details) {
+    //     // Implement rendering logic for group details here
+    //     try {
+    //         return `<ion-list>` + details.group_members.map((member) => `<ion-item>
+    //             <ion-label>
+    //                 id: <ion-badge color="warning">${member.user_id}</ion-badge>
+    //                 <span style="font-variant: small-caps; font-weight: bold">(${member.role.charAt(0).toUpperCase()}${member.role.slice(1)})</span>
+    //             </ion-label>
+    //        </ion-item>`).join('\n') + `</ion-list>`;
+    //     } catch(ex) {
+    //         console.log(ex);
+    //         return '';
+    //     }
+    // }
+    //
     async renameGroup(groupId, newName) {
         const group_was_updated = await Restock.updateGroup(groupId, newName);
         if (group_was_updated) {
@@ -136,13 +169,13 @@ export default class extends AbstractView {
 
     async refreshView() {
         // Fetch and render the updated list of groups
-        const groups = this.#groups;
-        const groupsHtml = this.renderGroups(groups);
-
-        // Update the groups list container
-        const groupsListContainer = document.getElementById('groups-list');
-        groupsListContainer.innerHTML = groupsHtml;
-
+        // const groups = this.#groups;
+        // const groupsHtml = this.renderGroups(groups);
+        //
+        // // Update the groups list container
+        // const groupsListContainer = document.getElementById('groups-list');
+        // groupsListContainer.innerHTML = groupsHtml;
+        this.render();
         // Reattach event listeners for the updated elements
         await this.#attachModifyGroupEventListeners();
     }
@@ -222,3 +255,5 @@ export default class extends AbstractView {
 
     }
 }
+
+customElements.define('manage-groups-page', ManageGroups);
