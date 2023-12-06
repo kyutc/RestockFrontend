@@ -175,7 +175,7 @@ export default class Inventory extends HTMLElement {
                     document.querySelectorAll('.group-selector')
                         .forEach( gs => gs.value = e.target.value);
                     this.renderContent();
-                    this.attachItemListeners();
+                    this.#attachItemListeners();
                 })
             })
 
