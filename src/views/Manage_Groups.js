@@ -1,5 +1,3 @@
-import Api from "../api.js";
-import restockdb from "../restockdb.js";
 import Restock from "../restock.js";
 
 export default class ManageGroups extends HTMLElement {
@@ -11,8 +9,8 @@ export default class ManageGroups extends HTMLElement {
     #selected_group = null; // Track the currently selected group
 
     connectedCallback() {
-        console.log("DEBUG: Loading Manage Groups", this.#groups)
         this.#groups = Restock.getGroups();
+        console.log("DEBUG: Loading Manage Groups")
         this.#selected_group = Restock.getCurrentGroup();
 
         this.render();
@@ -44,45 +42,8 @@ export default class ManageGroups extends HTMLElement {
         `;
     }
 
-    // isGroupSelected() {
-    //     return this.selectedGroupId !== null;
-    // }
-    //
-    // // TODO Implement means of selecting group id
-    // setSelectedGroupId(groupId){
-    //     this.selectedGroupId = groupId;
-    //     localStorage.setItem('selectedGroupId', groupId);
-    // }
-
-    // async getHtml() {
-    //     const groups = this.#groups;
-    //     const groupsHtml = this.renderGroups(groups);
-    //
-    //     return `
-    //     <h1>Manage Groups</h1>
-    //
-    //     <ion-button size="small" type="submit" id="create-group">Create Group</ion-button>
-    //
-    //     <!-- Form to create a new group -->
-    //     <ion-grid id="group-creation" style="display: none">
-    //         <ion-row>
-    //             <ion-col><ion-input label="Enter Group Name" label-placement="floating" fill="solid" id="group-name" required></ion-input></ion-col>
-    //             <ion-col><ion-button shape="square" size="medium" type="submit" clear id="submit-group">Submit</ion-button></ion-col>
-    //         </ion-row>
-    //     </ion-grid>
-    //
-    //     <section id="group-management">
-    //         <!-- List of Existing groups -->
-    //         <div id="groups-list">
-    //             ${groupsHtml}
-    //         </div>
-    //     </section>
-    // `;
-    // }
-    //
     renderGroups() {
         const groups = Restock.getGroups();
-        console.log(groups)
         return '<ion-accordion-group>'
             + groups.map((group) => `
                 <ion-accordion value="${group.id}" data-group-id="${group.id}" id="group${group.id}">
