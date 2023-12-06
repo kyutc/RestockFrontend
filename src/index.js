@@ -2,12 +2,12 @@ import Login from "./views/Login.js";
 // import History from "./views/History.js";
 // import Recipes from "./views/Recipes.js";
 import Settings from "./views/Settings.js";
-import Pantry from "./views/Pantry.js";
+import Inventory from "./views/Inventory.js";
 // import Shopping_List from "./views/Shopping_List.js";
 import Manage_Groups from "./views/Manage_Groups.js";
+import {loadingController} from "@ionic/core";
 import Restock from "./restock.js";
 
-Restock.init();
 let router;
 /**
  * On index.html, this is the <app-root></app-root> component.
@@ -23,8 +23,22 @@ class AppRoot extends HTMLElement {
      */
     connectedCallback() {
         console.log("DEBUG: Loading AppRoot");
-        this.render();
-        this.updateRoutes();
+        loadingController.create({
+            message: 'Loading app...',
+            spinner: 'bubbles'
+        }).then( loading => {
+            loading.present();
+            Restock.init().then(() => {
+                this.render();
+                this.updateRoutes();
+                router.addEventListener('ionRouteDidChange', (e) => {
+                    this.updateRoutes();
+                })
+                loading.dismiss();
+            });
+        })
+        // this.render();
+        // this.updateRoutes();
     }
 
     render() {
@@ -65,7 +79,15 @@ class AppRoot extends HTMLElement {
      */
     updateRoutes() {
         const active_session = Restock.hasActiveSession();
-        const default_page = "pantry"; // TODO: Conditional desktop/mobile
+        const group_id = Restock.getCurrentGroup()?.id;
+        let default_page = {
+            component: "manage-groups-page",
+            route: "/manage-groups"
+        };
+        if (group_id) {
+            default_page.component = "inventory-page";
+            default_page.route = `/`;
+        }
         let routes;
         if (!active_session) {
             // user is not logged in
@@ -75,7 +97,7 @@ class AppRoot extends HTMLElement {
                 `;
         } else {
             routes = `
-                    <ion-route url="/" component="${default_page}"></ion-route>
+                    <ion-route url="${default_page.route}" component="${default_page.component}"></ion-route>
                     <ion-route-redirect from="/login" to="/"></ion-route-redirect>
                     <ion-route url="/settings" component="settings-page"></ion-route>
                     <ion-route url="/manage_groups" component="manage-groups-page"></ion-route>
@@ -89,6 +111,7 @@ class AppRoot extends HTMLElement {
         }
         router.innerHTML = routes;
     }
+
 }
 
 /**
