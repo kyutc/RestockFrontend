@@ -124,7 +124,8 @@ export default class Inventory extends HTMLElement {
             arr.push(`
                 <ion-item ${attribute} id="${i.id}">
                     <ion-button class="add-pantry"><ion-icon name="add-outline"></ion-icon></ion-button>
-                    <ion-label>${i.name}<ion-chip class="ion-float-right" id="p-${i.id}">${i.pantry_quantity}</ion-label>
+                    <ion-label>${i.name}</ion-label>
+                    <ion-chip class="ion-float-right" id="p-${i.id}">${i.pantry_quantity}</ion-chip>
                     <ion-button class="subtract-pantry"><ion-icon name="remove-outline"></ion-icon></ion-button>
                     <ion-button class="options"><ion-icon name="ellipsis-vertical-outline"></ion-icon></ion-button>
                 </ion-item>
@@ -145,7 +146,8 @@ export default class Inventory extends HTMLElement {
             arr.push(`
                 <ion-item id="${i.id}">
                     <ion-button class="add-shopping_list"><ion-icon name="add-outline"></ion-icon></ion-button>
-                    <ion-label>${i.name}<ion-chip class="ion-float-right" id="sl-${i.id}">${i.shopping_list_quantity}</ion-chip></ion-label>
+                    <ion-label>${i.name}</ion-label>
+                    <ion-chip class="ion-float-right" id="sl-${i.id}">${i.shopping_list_quantity}</ion-chip>
                     <ion-button class="subtract-shopping_list"><ion-icon name="remove-outline"></ion-icon></ion-button>
                     <ion-button class="options"><ion-icon name="ellipsis-vertical-outline"></ion-icon></ion-button>
                 </ion-item>
