@@ -168,15 +168,18 @@ export default class Api {
 
     /**
      * Retrieve details of a specific group.
-     * 
+     * @param {string} token
      * @param {number} groupId
      * @returns {Promise<Response>}
      */
-    static async getGroupDetails(groupId) {
+    static async getGroupDetails(token, groupId) {
         const url = this._base_url + "group/" + groupId;
         const options = {
             method: "GET",
-            headers: this._headers
+            headers: {
+                ...this._headers,
+                "X-RestockUserApiToken" : token
+            }
         };
         return fetch(url, options);
     }
