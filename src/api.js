@@ -1,3 +1,5 @@
+import Item from "./models/item.js";
+
 export default class Api {
     static _base_url = "https://api.pantrysync.pro/api/v1/";
     static _headers = {
@@ -334,6 +336,36 @@ export default class Api {
         const options = {
             method: "DELETE",
             headers: this._headers
+        };
+        return fetch(url, options);
+    }
+
+    /**
+     * Create a new item
+     * @param token
+     * @param {Item} item
+     * @return {Promise<void>}
+     */
+    static async createItem(token, item) {
+        const url = this._base_url + `group/${item.group_id}/item`;
+        const formData = new FormData();
+        formData.append('group_id', item.group_id);
+        formData.append('name', item.name);
+        formData.append('description', item.description);
+        formData.append('category', item.category);
+        formData.append('pantry_quantity', item.pantry_quantity);
+        formData.append('minimum_threshold', item.minimum_threshold);
+        formData.append('auto_add_to_shopping_list', item.auto_add_to_shopping_list);
+        formData.append('shopping_list_quantity', item.shopping_list_quantity);
+        formData.append('dont_add_to_pantry_on_purchase', item.dont_add_to_pantry_on_purchase);
+
+        const options = {
+            method: "POST",
+            body: formData,
+            headers: {
+                ...this._headers,
+                "X-RestockUserApiToken": token
+            }
         };
         return fetch(url, options);
     }

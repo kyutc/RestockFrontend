@@ -2,7 +2,7 @@ import Group from "../models/group.js";
 import Item from "../models/item.js";
 import Restock from "../restock.js";
 import {navigateTo} from "../index.js";
-import {loadingController} from "@ionic/core";
+import {loadingController, modalController} from "@ionic/core";
 
 export default class Inventory extends HTMLElement {
     /** @type {Group} */
@@ -161,6 +161,7 @@ export default class Inventory extends HTMLElement {
         this.#attachGroupSelectorListeners();
         // attachSearchFilterListeners();
         this.#attachItemListeners();
+        this.#attachNewItemButtonListener();
     }
 
     /**
@@ -200,11 +201,20 @@ export default class Inventory extends HTMLElement {
         subtract_shopping_list_buttons.forEach( sslb => sslb.addEventListener('click', this.#subtractOneFromShoppingList));
     }
 
+    #attachNewItemButtonListener() {
+        const new_item_fab = document.querySelector('#create-item-button');
+        new_item_fab.addEventListener('click', this.#displayCreateItemModal.bind(this));
+    }
+
+    /**
+     * Get all items and logs that belong to this group
+     * @return {Promise<boolean>}
+     */
     async #fetchDetails() {
         this.#current_group = Restock.getCurrentGroup();
         if (!this.#current_group) return false;
         this.#items = Restock.getItemsForGroupById(this.#current_group.id);
-
+        // this.#action_logs = Restock.getActionLogsForGroupById(this.#current_group.id);
         if (this.#items.length == 0) { // Debug
             const fake_items = [
                 {
@@ -310,6 +320,137 @@ export default class Inventory extends HTMLElement {
         const item = this.#getItemReferencedByEvent(e);
         if (!item) return;
         if (item.subtractOneFromShoppingList()) this.#updateItemQuantities(item);
+    }
+
+    /**
+     * Semaphore to prevent double opening of create-item form
+     * @type {boolean}
+     */
+    #modal_is_already_open = false;
+
+    /**
+     * Capture the item build when the modal is dismissed
+     * @type {Item}
+     */
+    #modal_item;
+
+    async #displayCreateItemModal() {
+        if (this.#modal_is_already_open) return;
+        this.#modal_is_already_open = true;
+
+        const div = document.createElement('div');
+        div.innerHTML = `
+            <ion-header>
+                <ion-toolbar>
+                    <ion-buttons slot="end">
+                        <ion-button id="modal-close"><ion-icon name="close-outline"></ion-icon></ion-button>
+                    </ion-buttons>
+                    <ion-title class="ion-text-center">Create new item</ion-title>
+                </ion-toolbar>
+            </ion-header>
+            <ion-content class="ion-padding">
+                <ion-list>
+                    <ion-item>
+                        <ion-input label="Product name" label-placement="floating" type="text" id="create-item-name">
+                    </ion-item>
+                    <ion-item>
+                        <ion-textarea label="Product description" label-placement="floating" auto-grow="true" counter="true" maxlength="255" id="create-item-description"></ion-textarea>
+                    </ion-item>
+                    <!--
+                    <ion-item>
+                        <ion-input label="Category" label-placement="floating" type="text" id="create-item-category"></ion-input>
+                    </ion-item>
+                    -->
+                    <ion-item>
+                        <ion-col><ion-input class="ion-text-end" label="Pantry quantity" label-placement="stacked" type="number" value="0" id="create-item-pantry-quantity"></ion-input></ion-col>
+                        <ion-col><ion-input class="ion-text-end" label="Minimum threshold" label-placement="stacked" type="number" value="0" id="create-item-minimum-threshold"></ion-input></ion-col> 
+                        <ion-col><ion-input class="ion-text-end" label="Shopping list quantity" label-placement="stacked" type="number" value="0" id="create-item-shopping-list-quantity"></ion-input></ion-col>
+                    </ion-item>
+                    <ion-item>
+                        <ion-checkbox label-placement="start" justify="end" fill="outline" id="create-item-auto-add-to-shopping-list">Automatically add to shopping list</ion-checkbox>
+                    </ion-item>
+                    <ion-item>
+                        <ion-checkbox label-placement="start" justify="end" fill="outline" id="create-item-dont-add-to-pantry-on-purchase">Don't add to pantry on purchase</ion-checkbox>
+                    </ion-item>
+                    <ion-item>
+                        <ion-grid><ion-row class="ion-justify-content-end"><ion-col size="2">
+                            <ion-button item-end id="modal-confirm">Submit</ion-button>
+                        </ion-col></ion-row></ion-grid>
+                        
+                    </ion-item>
+                </ion-list>
+            </ion-content>
+      `;
+
+        const modal = await modalController.create({
+            backdropDismiss: false,
+            component: div
+        });
+
+        const captureModalInputAsItem = () => {
+            return new Item({
+                id: 0, // Set by server
+                group_id: this.#current_group.id,
+                name: document.querySelector('#create-item-name').value,
+                description: document.querySelector('#create-item-description').value,
+                // category: document.querySelector('#create-item-category').value,
+                category: "default#000000",
+                pantry_quantity: document.querySelector('#create-item-pantry-quantity').value,
+                minimum_threshold: document.querySelector('#create-item-minimum-threshold').value,
+                auto_add_to_shopping_list: document.querySelector('#create-item-auto-add-to-shopping-list').checked,
+                shopping_list_quantity: document.querySelector('#create-item-shopping-list-quantity').value,
+                dont_add_to_pantry_on_purchase: document.querySelector('#create-item-dont-add-to-pantry-on-purchase').checked
+            });
+        };
+
+        modal.present().then( () => {
+            document.querySelector('#modal-close').addEventListener('click', () => {
+                this.#modal_item = captureModalInputAsItem();
+                modalController.dismiss(null, 'cancel');
+            })
+            document.querySelector('#modal-confirm').addEventListener('click', () => {
+                // todo: guard against bad input and incoplete fields
+                this.#modal_item = captureModalInputAsItem();
+                    modalController.dismiss(null, 'submit');
+            })
+        });
+
+        const { data, role } = await modal.onWillDismiss();
+        const item = this.#modal_item;
+        console.log(item);
+        if (role === 'submit' /* && TODO: item.isValidItem */) {
+            loadingController.create({
+                message: 'Submitting form...',
+                spinner: 'bubbles'
+            }).then( (loading) => {
+                loading.present();
+                Restock.createItem(item).then( item_was_created => {
+                    if (!item_was_created) {
+                        this.Toast('Something went wrong. Please try again later.', 'danger');
+                        return;
+                    }
+                    this.Toast(`${item.name} was successfully created`)
+                    // Pulls all changes
+                    this.#fetchDetails();
+                    // Only update items
+                    this.renderContent();
+                    this.#attachItemListeners();
+                }).then( () => {
+                    loading.dismiss();
+                })
+            })
+        }
+
+        this.#modal_is_already_open = false;
+    }
+
+    async Toast(message, color = 'success') {
+        const toast = document.createElement('ion-toast');
+        toast.message = message;
+        toast.duration = 2000;
+        toast.color = color;
+        document.body.appendChild(toast);
+        return toast.present();
     }
 }
 customElements.define('inventory-page', Inventory);

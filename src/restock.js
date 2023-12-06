@@ -257,6 +257,50 @@ export default class Restock {
         // restockdb.deleteGroup
     }
 
+    static async createItem(item) {
+        const response = await Api.createItem(this.#session, item);
+        if (!response.ok) {
+            const body = await response.text();
+            console.log("DEBUG: Restock.createItem -- Failed to create item", body);
+            return false;
+        }
+        console.log("DEBUG: Restock.createItem -- Successfully created item");
+        const data = await response.json();
+        const new_item = new Item(data);
+        // new_item.save();
+        this.#items[new_item.group_id].push(new_item);
+        return true;
+    }
+
+    static async updateItem(item) {
+        const response = await Api.updateItem(this.#session, item);
+        if (!response.ok) {
+            const body = await response.text();
+            console.log("DEBUG: Restock.updateItem -- Failed to update item", body);
+            return false;
+        }
+        console.log("DEBUG: Restock.updateItem -- Successfully updated item");
+        const data = await response.json();
+        const updated_item = new Item(data);
+        const index = this.#items[updated_item.group_id].findIndex( old_item => old_item.id == updated_item.id);
+        this.#items[updated_item.group_id][index] = updated_item;
+        // updated_item.save()
+        return true;
+    }
+
+    static async deleteItem(item) {
+        const response = await Api.deleteItem(this.#session, item);
+        if (!response.ok) {
+            const body = await response.text();
+            console.log("DEBUG: Restock.deleteItem -- Failed to delete item", body);
+            return false;
+        }
+        console.log("DEBUG: Restock.deleteItem -- Successfully deleted item");
+        const index_to_remove = this.#items[item.group_id].findIndex( old_item => old_item.id == item.id);
+        const removed_item = this.#items[item.group_id].splice(index_to_remove, 1);
+        // restockdb.deleteItem
+    }
+
     ////////////
     // PRIVATE
     ////////////
