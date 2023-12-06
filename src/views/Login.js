@@ -66,11 +66,11 @@ export default class LoginPage extends HTMLElement {
         const password = document.getElementById('login-password').value;
 
         const user_is_logged_in = await Restock.login(email, password);
-        if (user_is_logged_in) {
-            navigateTo("/");
-        } else {
-            alert('Login failed');
+        if (!user_is_logged_in) {
+            alert('Login failed')
+            return;
         }
+        navigateTo('/');
     }
 
     async submitRegistrationForm() {
