@@ -120,7 +120,9 @@ export default class Restock {
         console.log("DEBUG: Restock.init -- Initialized application state")
         return this.#initialized = await this.#populateGroupsForThisUser()
             .then(() => {
-                this.#groups.forEach( g => this.#populateDetailsForGroupById(g.id))
+                this.#groups.forEach( g => {
+                    this.#populateDetailsForGroupById(g.id)
+                })
             })
             .then( () => {
                 return this.setCurrentGroup(
@@ -333,20 +335,18 @@ export default class Restock {
      * @return {Promise<boolean>}
      */
     static async #populateDetailsForGroupById(group_id)  {
-        const isLoaded = this.#isLoaded;
-        const setLoaded = this.#setLoaded;
-        const setUnloaded = this.#setUnloaded;
         if (this.#isLoaded(group_id)) return false; // Block subsequent attempts
-        this.#setLoaded()
+        this.#setLoaded(group_id);
+
         if (!group_id) {
-            setUnloaded(group_id);
+            this.#setUnloaded(group_id);
             return false;
         }
 
         const response = await Api.getGroupDetails(this.#session, group_id);
         if (!response.ok) {
             // Failed to connect to server or user is not a part of this group
-            setUnloaded(group_id);
+            this.#setUnloaded(group_id);
             const body = await response.text();
             console.log("DEBUG: Restock.getGroupDetails -- Failed to retrieve details", body, {group_id: group_id});
             return false;
@@ -389,15 +389,10 @@ export default class Restock {
             // action_log.save()
             return action_log;
         });
-        console.log(`DEBUG: Restock.getGroupDetails -- Populated entries for current group`,
-            group,
-            this.#group_members[group_id],
-            this.#items[group_id],
-            this.#action_logs[group_id]);
         return true;
     }
 
-    static #isLoaded(group_id) { return this.#loaded_groups[group_id]; }
+    static #isLoaded(group_id) { return this.#loaded_groups[group_id] = this.#loaded_groups[group_id] ?? false; }
     static #setLoaded(group_id) { this.#loaded_groups[group_id] = true; }
     static #setUnloaded(group_id)   { this.#loaded_groups[group_id] = false; }
 
