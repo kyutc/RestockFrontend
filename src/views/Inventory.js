@@ -3,6 +3,11 @@ import Item from "../models/item.js";
 import Restock from "../restock.js";
 import {navigateTo} from "../index.js";
 import {loadingController, modalController} from "@ionic/core";
+import inventoryContentFrame from "./components/inventory/inventory_content_frame.js";
+import pantryItemComponent from "./components/inventory/pantry_item.js";
+import shoppingListItemComponent from "./components/inventory/shopping_list_item.js";
+import createItemModal from "./components/inventory/create_item_modal.js";
+import groupSelectComponent from "./components/inventory/group_select_component.js";
 
 export default class Inventory extends HTMLElement {
     /** @type {Group} */
@@ -36,81 +41,27 @@ export default class Inventory extends HTMLElement {
             navigateTo("/manage_groups");
             return;
         }
-        const group_name  = this.#current_group['name'];
-        this.innerHTML = `
-                <ion-content>
-                    <ion-grid class="item-ui-container">
-                        <ion-row class="ion-hide-md-down">
-                            <ion-header>
-                                <ion-toolbar>
-                                    <ion-button><ion-icon name="chevron-back-outline" class="change-group-back"></ion-icon></ion-button>
-                                    <ion-button class="group-selector-button"></ion-button>
-                                    <ion-button><ion-icon name="chevron-forward-outline" class="change-group-forward"></ion-icon></ion-button>
-                                </ion-toolbar>
-                                <ion-toolbar>
-                                    <ion-searchbar show-clear-button="always"></ion-searchbar>
-                                </ion-toolbar>
-                            </ion-header>
-                        </ion-row>
-                        <ion-row>
-                            <ion-col size="6">
-                                <ion-header>
-                                    <ion-toolbar>
-                                        <ion-title>Pantry</ion-title>
-                                    </ion-toolbar>
-                                    <ion-toolbar class="ion-hide-md-up">
-                                        <ion-button><ion-icon name="chevron-back-outline" class="change-group-back"></ion-icon></ion-button>
-                                        <ion-select class="group-selector-button"></ion-select>
-                                        <ion-button><ion-icon name="chevron-forward-outline" class="change-group-forward"></ion-icon></ion-button>
-                                    </ion-toolbar>
-                                    <ion-toolbar class="ion-hide-md-up">
-                                        <ion-searchbar show-clear-button="always"></ion-searchbar>
-                                    </ion-toolbar>
-                                </ion-header>
-                                <ion-list id="pantry-content"></ion-list>
-                            </ion-col>
-                            <ion-col size="6">
-                                <ion-header>
-                                    <ion-toolbar>
-                                        <ion-title>Shopping List</ion-title>
-                                    </ion-toolbar>
-                                    <ion-toolbar class="ion-hide-md-up">
-                                        <ion-button><ion-icon name="chevron-back-outline" id="change-group-back"></ion-icon></ion-button>
-                                        <ion-button class="group-selector-button"></ion-button>
-                                        <ion-button><ion-icon name="chevron-forward-outline" id="change-group-forward"></ion-icon></ion-button>
-                                    </ion-toolbar>
-                                    <ion-toolbar class="ion-hide-md-up">
-                                        <ion-searchbar show-clear-button="always"></ion-searchbar>
-                                    </ion-toolbar>
-                                </ion-header>
-                                <ion-list id="shopping-list-content"></ion-list>
-                            </ion-col>
-                        </ion-row>
-                    </ion-grid>
-                    <ion-fab slot="fixed" vertical="bottom" horizontal="end">
-                        <ion-fab-button id="create-item-button"><ion-icon name="add"></ion-icon></ion-fab-button>
-                    </ion-fab>
-                    <ion-row class="history-box"> History will go here</ion-row>
-                </ion-content>
-            `;
+        this.innerHTML = inventoryContentFrame(); //
+        this.renderGroupSelectors();
         this.renderContent();
     }
 
     renderContent() {
-        console.log('ITEMS', this.#items);
-        this.renderGroupSelector();
         this.renderPantryContent();
         this.renderShoppingListContent();
     }
 
-    renderGroupSelector() {
-        const group_selectors = document.querySelectorAll('.group-selector-button');
-        const selector_template = `<ion-select aria-label="Selected group" value="${this.#current_group.id}" class="group-selector">`
-            + Restock.getGroups().map(g => `<ion-select-option value="${g.id}">${g.name}</ion-select-option>`).join('')
-            + `</ion-select>`
-        ;
-        group_selectors.forEach(gs => gs.innerHTML = selector_template)
-
+    /**
+     * Generates a select component that allows the user to change their current group.
+     * There are 3 group selector buttons that contain the generated HTML, but only one should be visibleat any time.
+     */
+    renderGroupSelectors() {
+        const group_selects = document.querySelectorAll('.group-select-button');
+        const select_component = groupSelectComponent(this.#current_group, Restock.getGroups());
+        group_selects.forEach(gs => {
+            gs.innerHTML = select_component
+            gs.querySelector('.group-select').interfaceOptions = { header: 'Selected group' };
+        });
     }
 
     /**
@@ -118,20 +69,7 @@ export default class Inventory extends HTMLElement {
      */
     renderPantryContent() {
         const pantry_content = document.querySelector('#pantry-content');
-        const items = this.#items.reduce( (arr, i) => {
-            let attribute = '';
-            if (i.pantry_quantity == 0) attribute = `class="out-of-stock"`;
-            arr.push(`
-                <ion-item ${attribute} id="${i.id}">
-                    <ion-button class="add-pantry"><ion-icon name="add-outline"></ion-icon></ion-button>
-                    <ion-label>${i.name}</ion-label>
-                    <ion-chip class="ion-float-right" id="p-${i.id}">${i.pantry_quantity}</ion-chip>
-                    <ion-button class="subtract-pantry"><ion-icon name="remove-outline"></ion-icon></ion-button>
-                    <ion-button class="options"><ion-icon name="ellipsis-vertical-outline"></ion-icon></ion-button>
-                </ion-item>
-            `);
-            return arr;
-        }, []).join('');
+        const items = this.#items.reduce( (html, item) => html + pantryItemComponent(item), '');
         pantry_content.innerHTML = items;
     }
 
@@ -141,24 +79,12 @@ export default class Inventory extends HTMLElement {
     renderShoppingListContent() {
         const shopping_list_content = document.querySelector('#shopping-list-content');
         if (!shopping_list_content) return;
-        const items = this.#items.reduce( (arr, i) => {
-            if (i.shopping_list_quantity == 0) return arr;
-            arr.push(`
-                <ion-item id="${i.id}">
-                    <ion-button class="add-shopping_list"><ion-icon name="add-outline"></ion-icon></ion-button>
-                    <ion-label>${i.name}</ion-label>
-                    <ion-chip class="ion-float-right" id="sl-${i.id}">${i.shopping_list_quantity}</ion-chip>
-                    <ion-button class="subtract-shopping_list"><ion-icon name="remove-outline"></ion-icon></ion-button>
-                    <ion-button class="options"><ion-icon name="ellipsis-vertical-outline"></ion-icon></ion-button>
-                </ion-item>
-            `);
-            return arr;
-        }, []).join('');
+        const items = this.#items.reduce( (html, item) => html + shoppingListItemComponent(item), '');
         shopping_list_content.innerHTML = items;
     }
 
     #attachEventListeners() {
-        this.#attachGroupSelectorListeners();
+        this.#attachGroupSelectFieldListeners();
         // attachSearchFilterListeners();
         this.#attachItemListeners();
         this.#attachNewItemButtonListener();
@@ -168,21 +94,54 @@ export default class Inventory extends HTMLElement {
      * When the selector is changed, update all selectors to display the right group, fetch details for the new group,
      * and then re-render the page content.
      */
-    #attachGroupSelectorListeners() {
-        const selects = document.querySelectorAll('.group-selector');
-        selects.forEach( select => {
-            select.addEventListener('ionChange', e => {
-                const group_id = e.target.value; // New group id
-                Restock.setCurrentGroup(group_id).then( (group_was_changed) => {
-                    if (!group_was_changed) return; // The described group was not found for this user
-                    document.querySelectorAll('.group-selector')
-                        .forEach( gs => gs.value = e.target.value);
+    #attachGroupSelectFieldListeners() {
+        const select_component_buttons = document.querySelectorAll('.group-select-button');
+        const updateGroupSelection = (group_id) => {
+            Restock.setCurrentGroup(group_id).then( (group_was_changed) => {
+                if (!group_was_changed) return; // The described group was not found for this user
+                // Load the selected group's data
+                this.#fetchDetails().then( (details_were_retrieved) => {
+                    if (!details_were_retrieved) return;
+                    this.renderGroupSelectors();
                     this.renderContent();
                     this.#attachItemListeners();
-                })
+                });
+            });
+        }
+        select_component_buttons.forEach( select => {
+            select.addEventListener('ionChange', e => { // Listening for the event bubbling from the select component
+                const group_id = e.target.value; // New group id
+                updateGroupSelection(group_id);
             })
+        });
+        /**
+         * Changing groups using directional buttons requires having an "order" of options and a "position" to move
+         * from. The order of these options is determined by mapping the options for our select component to an array
+         * of values. Each value is a group's id. We can find our position by indexing the current group's id in this
+         * array, and then traversing by (+/-) one element, wrapping if it's a lower or upper bound.
+         */
+        const option_values = Array.from(select_component_buttons[0].querySelectorAll('ion-select-option'))
+            .map( option => option.value);
+        const selectRelativeOption = (offset) => {
+            const wrap = (pos, limit) => (pos < 0) ? (limit + pos % limit) : pos % limit; // e.g.: (4, 3) = 1 and (-1, 3) = 2
+            const current_index = option_values.findIndex( group_id => group_id == this.#current_group.id);
+            const next_index = wrap(current_index + offset, option_values.length);
+            const selected_group_id = option_values[next_index];
+            updateGroupSelection(selected_group_id);
+        }
 
-        })
+        const prev_group_buttons = document.querySelectorAll('.change-group-back');
+        prev_group_buttons.forEach( prev_group_button => {
+            prev_group_button.addEventListener('click', () => {
+                selectRelativeOption(-1)
+            })
+        });
+        const next_group_buttons = document.querySelectorAll('.change-group-forward');
+        next_group_buttons.forEach( next_group_button => {
+            next_group_button.addEventListener('click', () => {
+                selectRelativeOption(1)
+            })
+        });
     }
 
     #attachSearchFilterListeners() {
@@ -207,7 +166,7 @@ export default class Inventory extends HTMLElement {
     }
 
     /**
-     * Get all items and logs that belong to this group
+     * Load the currently selected group, it's items, and logs.
      * @return {Promise<boolean>}
      */
     async #fetchDetails() {
@@ -269,11 +228,7 @@ export default class Inventory extends HTMLElement {
             this.#items = fake_items.map(i => new Item(i));
         }
         // this.#action_logs = Restock.getActionLogsForGroupById(this.#current_group.id);
-    }
-
-    #nextGroup() {
-        this.#current_group = Restock.getNextGroup();
-        this.render();
+        return true;
     }
 
     /**
@@ -295,10 +250,7 @@ export default class Inventory extends HTMLElement {
     #getItemReferencedByEvent = (e) => {
         const item_id = e.currentTarget.parentNode.id; // Should be an <ion-item> element
         const item = this.#items.find(i => i.id == item_id);
-        if (!item) {
-            console.log("DEBUG: Inventory.js -- failed to get item by id")
-            return null;
-        }
+        if (!item) return null;
         return item;
     }
     #addOneToPantry = (e) => {
@@ -339,48 +291,7 @@ export default class Inventory extends HTMLElement {
         this.#modal_is_already_open = true;
 
         const div = document.createElement('div');
-        div.innerHTML = `
-            <ion-header>
-                <ion-toolbar>
-                    <ion-buttons slot="end">
-                        <ion-button id="modal-close"><ion-icon name="close-outline"></ion-icon></ion-button>
-                    </ion-buttons>
-                    <ion-title class="ion-text-center">Create new item</ion-title>
-                </ion-toolbar>
-            </ion-header>
-            <ion-content class="ion-padding">
-                <ion-list>
-                    <ion-item>
-                        <ion-input label="Product name" label-placement="floating" type="text" id="create-item-name">
-                    </ion-item>
-                    <ion-item>
-                        <ion-textarea label="Product description" label-placement="floating" auto-grow="true" counter="true" maxlength="255" id="create-item-description"></ion-textarea>
-                    </ion-item>
-                    <!--
-                    <ion-item>
-                        <ion-input label="Category" label-placement="floating" type="text" id="create-item-category"></ion-input>
-                    </ion-item>
-                    -->
-                    <ion-item>
-                        <ion-col><ion-input class="ion-text-end" label="Pantry quantity" label-placement="stacked" type="number" value="0" id="create-item-pantry-quantity"></ion-input></ion-col>
-                        <ion-col><ion-input class="ion-text-end" label="Minimum threshold" label-placement="stacked" type="number" value="0" id="create-item-minimum-threshold"></ion-input></ion-col> 
-                        <ion-col><ion-input class="ion-text-end" label="Shopping list quantity" label-placement="stacked" type="number" value="0" id="create-item-shopping-list-quantity"></ion-input></ion-col>
-                    </ion-item>
-                    <ion-item>
-                        <ion-checkbox label-placement="start" justify="end" fill="outline" id="create-item-auto-add-to-shopping-list">Automatically add to shopping list</ion-checkbox>
-                    </ion-item>
-                    <ion-item>
-                        <ion-checkbox label-placement="start" justify="end" fill="outline" id="create-item-dont-add-to-pantry-on-purchase">Don't add to pantry on purchase</ion-checkbox>
-                    </ion-item>
-                    <ion-item>
-                        <ion-grid><ion-row class="ion-justify-content-end"><ion-col size="2">
-                            <ion-button item-end id="modal-confirm">Submit</ion-button>
-                        </ion-col></ion-row></ion-grid>
-                        
-                    </ion-item>
-                </ion-list>
-            </ion-content>
-      `;
+        div.innerHTML = createItemModal();
 
         const modal = await modalController.create({
             backdropDismiss: false,
@@ -417,7 +328,6 @@ export default class Inventory extends HTMLElement {
 
         const { data, role } = await modal.onWillDismiss();
         const item = this.#modal_item;
-        console.log(item);
         if (role === 'submit' /* && TODO: item.isValidItem */) {
             loadingController.create({
                 message: 'Submitting form...',
