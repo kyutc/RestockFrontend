@@ -133,14 +133,13 @@ export default class Restock {
 
     /**
      * Get the current list of items for the described group
-     * @return {Promise<Array<Item>>}
+     * @return {Array<Item>}
      */
     static getItemsForGroupById(group_id) {
         const group = this.#current_group.id == group_id ?
             this.getCurrentGroup() :
             this.getGroupById(group_id)
         ;
-        console.log("DEBUG: restock.js -- getting items for current group", group, this.#items[group.id])
         return this.#items[group.id];
     }
 
