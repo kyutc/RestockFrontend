@@ -119,11 +119,7 @@ export default class Restock {
         // await user.save(); // TODO
         console.log("DEBUG: Restock.init -- Initialized application state")
         return this.#initialized = await this.#populateGroupsForThisUser()
-            .then(() => {
-                this.#groups.forEach( g => {
-                    this.#populateDetailsForGroupById(g.id)
-                })
-            })
+            .then( () => Promise.all(this.#groups.map( g => this.#populateDetailsForGroupById(g.id) )) )
             .then( () => {
                 return this.setCurrentGroup(
                     localStorage.getItem('last_used_group_id')
