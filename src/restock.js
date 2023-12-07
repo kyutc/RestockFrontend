@@ -376,7 +376,7 @@ export default class Restock {
             this.#group_members[group_id].push(group_member);
         });
         this.#items[group_id].length = 0;
-        data.items.sort((a, b) => a.localeCompare(b, 'en', { sensitivity: 'base' })); // Alphabetical sort
+        data.items.map(String).sort((a, b) => a.localeCompare(b, 'en', { sensitivity: 'base' })); // Alphabetical sort
         data.items.forEach((item_data) => {
             const item = new Item(item_data)
             // item.save()
