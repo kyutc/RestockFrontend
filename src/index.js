@@ -7,6 +7,7 @@ import Inventory from "./views/Inventory.js";
 import Manage_Groups from "./views/Manage_Groups.js";
 import {loadingController} from "@ionic/core";
 import Restock from "./restock.js";
+import restockLogo from './Images/RestockLogo.png';
 
 let router;
 /**
@@ -53,7 +54,7 @@ class AppRoot extends HTMLElement {
                 <ion-split-pane content-id="menu-content" when="md">
                     <ion-menu content-id="menu-content">
                         <ion-toolbar>
-                            <ion-img src="src/Images/RestockLogo.png" alt="RestockLogo" id="logo"></ion-img>
+                            <ion-img src="${restockLogo}" alt="RestockLogo" id="logo"></ion-img>
                             <ion-title>Menu</ion-title>
                         </ion-toolbar>
                         <ion-content class="ion-padding">
