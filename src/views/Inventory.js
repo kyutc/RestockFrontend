@@ -46,9 +46,14 @@ export default class Inventory extends HTMLElement {
         this.renderContent();
     }
 
-    renderContent() {
-        this.renderPantryContent();
-        this.renderShoppingListContent();
+    /**
+     *
+     * @param {Array<Item>} filtered_items
+     */
+    renderContent(filtered_items = null) {
+        const items = filtered_items ?? this.#items;
+        this.renderPantryContent(items);
+        this.renderShoppingListContent(items);
     }
 
     /**
@@ -67,25 +72,23 @@ export default class Inventory extends HTMLElement {
     /**
      * Render all items in the pantry context
      */
-    renderPantryContent() {
+    renderPantryContent(items) {
         const pantry_content = document.querySelector('#pantry-content');
-        const items = this.#items.reduce( (html, item) => html + pantryItemComponent(item), '');
-        pantry_content.innerHTML = items;
+        pantry_content.innerHTML = items.reduce( (html, item) => html + pantryItemComponent(item), '');
     }
 
     /**
      * Render all items in the shopping list context
      */
-    renderShoppingListContent() {
+    renderShoppingListContent(items) {
         const shopping_list_content = document.querySelector('#shopping-list-content');
         if (!shopping_list_content) return;
-        const items = this.#items.reduce( (html, item) => html + shoppingListItemComponent(item), '');
-        shopping_list_content.innerHTML = items;
+        shopping_list_content.innerHTML = items.reduce( (html, item) => html + shoppingListItemComponent(item), '');
     }
 
     #attachEventListeners() {
         this.#attachGroupSelectFieldListeners();
-        // attachSearchFilterListeners();
+        this.#attachSearchFilterListeners();
         this.#attachItemListeners();
         this.#attachNewItemButtonListener();
     }
@@ -144,8 +147,20 @@ export default class Inventory extends HTMLElement {
         });
     }
 
+    /**
+     * Filter the items of this group to elements whose name contains the search query.
+     * Re-renders the content using only the filtered items.
+     */
     #attachSearchFilterListeners() {
-        //todo
+        const searchbars = document.querySelectorAll('.item-searchbar');
+        searchbars.forEach( searchbar => {
+            searchbar.addEventListener('ionInput', (e) => {
+                const needle = e.target.value;
+                const filtered_items = this.#items.filter( item => item.name.indexOf(needle) !== -1 );
+                this.renderContent(filtered_items);
+                this.#attachItemListeners();
+            });
+        })
     }
 
     #attachItemListeners() {

@@ -20,7 +20,7 @@ export default function inventoryContentFrame() {
                         </ion-buttons>
                     </ion-toolbar>
                     <ion-toolbar>
-                        <ion-searchbar show-clear-button="always"></ion-searchbar>
+                        <ion-searchbar class="item-searchbar" placeholder="Search" show-clear-button="always"></ion-searchbar>
                     </ion-toolbar>
                 </ion-header>
             </ion-row>
@@ -38,7 +38,7 @@ export default function inventoryContentFrame() {
                             </ion-buttons>
                         </ion-toolbar>
                         <ion-toolbar class="ion-hide-md-up">
-                            <ion-searchbar show-clear-button="always"></ion-searchbar>
+                            <ion-searchbar class="item-searchbar" placeholder="Search" show-clear-button="always"></ion-searchbar>
                         </ion-toolbar>
                     </ion-header>
                     <ion-list id="pantry-content"></ion-list> <!-- Item list (pantry fields) -->
@@ -56,7 +56,7 @@ export default function inventoryContentFrame() {
                             </ion-buttons>
                         </ion-toolbar>
                         <ion-toolbar class="ion-hide-md-up">
-                            <ion-searchbar show-clear-button="always"></ion-searchbar>
+                            <ion-searchbar class="item-searchbar" placeholder="Search" show-clear-button="always"></ion-searchbar>
                         </ion-toolbar>
                     </ion-header>
                     <ion-list id="shopping-list-content" class="collapse-hidden"></ion-list>
