@@ -6,6 +6,22 @@ ion-menu {
     min-height: 80%;
 }
 
+.hidden {
+    /*
+        Elements with this class will not be visible, but they will still take up space when rendered.
+        Since items render in the same order for pantry and shopping list, this will render them adjacent
+        in the desktop view.
+    */
+    visibility: hidden;
+}
+.collapse-hidden .hidden {
+    /*
+        If an element is hidden, it will no longer take up space when rendered.
+        This will restructure the shopping-list-content layout to no longer have empty space between items.
+     */
+    display: none;
+}
+
 #logo {
     width: 60%;
     height: auto;
