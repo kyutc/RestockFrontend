@@ -5,3 +5,11 @@ ion-menu {
 .item-ui-container {
     min-height: 80%;
 }
+
+#logo {
+    width: 60%;
+    height: auto;
+    margin-left: 50px;
+    margin-bottom: 20px;
+    margin-top: 10px;
+}
