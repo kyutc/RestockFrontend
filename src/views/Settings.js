@@ -23,13 +23,17 @@ export default class SettingsPage extends HTMLElement {
 
     render() {
         this.innerHTML = `
-            <ion-header>
-                <ion-toolbar>
-                    <ion-title>Settings</ion-title>
-                    <ion-subtitle>Manage your privacy and configuration.</ion-subtitle>
-                </ion-toolbar>
-            </ion-header>
             <ion-content>
+                <ion-grid>
+                    <ion-row>
+                        <ion-header>
+                            <ion-toolbar>
+                                <ion-title>Settings</ion-title>
+                                <ion-subtitle>Manage your privacy and configuration.</ion-subtitle>
+                            </ion-toolbar>
+                        </ion-header>
+                    </ion-row>
+                </ion-grid>
                 <ion-list>
                     <ion-item>
                         <ion-button shape="round" size="small" fill="outline" id="manage-group" href="/manage_groups">Manage Groups</ion-button>
@@ -47,6 +51,7 @@ export default class SettingsPage extends HTMLElement {
                         <ion-button shape="round" size="small" color="danger" fill="outline" id="delete-account">Delete Account</ion-button>
                     </ion-item>
                 </ion-list>
+                    
             </ion-content>`;
     }
 
