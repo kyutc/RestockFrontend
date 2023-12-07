@@ -1,5 +1,6 @@
 import Restock from "../restock.js";
 import {navigateTo} from "../index.js";
+import {raiseToast} from "../utility.js";
 
 export default class LoginPage extends HTMLElement {
 
@@ -9,16 +10,8 @@ export default class LoginPage extends HTMLElement {
         this.attachEventListeners();
     }
 
-    async Toast(message, color = 'success') {
-        const toast = document.createElement('ion-toast');
-        toast.message = message;
-        toast.duration = 2000;
-        toast.color = color;
-        document.body.appendChild(toast);
-        return toast.present();
-    }
     async errorToast(message) {
-        return this.Toast(message, 'danger');
+        return raiseToast(message, 'danger');
     }
 
     render() {
@@ -82,7 +75,7 @@ export default class LoginPage extends HTMLElement {
             await this.errorToast('Login failed');
             return;
         }
-        await this.Toast('Login successful');
+        await raiseToast('Login successful');
         navigateTo('/');
     }
 
@@ -99,7 +92,7 @@ export default class LoginPage extends HTMLElement {
 
         const account_registered = await Restock.register(email, username, password);
         if (account_registered) {
-            await this.Toast('Registration successful. Please log in.');
+            await raiseToast('Registration successful. Please log in.');
             document.getElementById('register-email').value = '';
             document.getElementById('register-username').value = '';
             document.getElementById('register-password').value = '';

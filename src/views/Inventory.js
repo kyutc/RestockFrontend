@@ -8,7 +8,22 @@ import pantryItemComponent from "./components/inventory/pantry_item.js";
 import shoppingListItemComponent from "./components/inventory/shopping_list_item.js";
 import createItemModal from "./components/inventory/create_item_modal.js";
 import groupSelectComponent from "./components/inventory/group_select_component.js";
+import {raiseToast} from "../utility.js";
 
+/**
+ * TODO:
+ *  Options kebab -
+ *      update item
+ *      Delete item
+ *  Update item after incr/decr
+ *  Group history
+ *  Shopping list
+ *      If an item is added to the shopping list wihle it exists in the pantry list, it should become visible
+ *      Action button to mark item as purchased
+ *  Pantry
+ *      Warning color on items that are at the minimum threshold
+ *      Danger color on items that are at 0
+ */
 export default class Inventory extends HTMLElement {
     /** @type {Group} */
     #current_group;
@@ -20,7 +35,7 @@ export default class Inventory extends HTMLElement {
         loadingController.create({
             message: 'Building items...',
             spinner: 'bubbles'
-        }).then( (loading) => {
+        }).then((loading) => {
             loading.present();
             this.#fetchDetails();
             this.render();
@@ -65,7 +80,7 @@ export default class Inventory extends HTMLElement {
         const select_component = groupSelectComponent(this.#current_group, Restock.getGroups());
         group_selects.forEach(gs => {
             gs.innerHTML = select_component
-            gs.querySelector('.group-select').interfaceOptions = { header: 'Selected group' };
+            gs.querySelector('.group-select').interfaceOptions = {header: 'Selected group'};
         });
     }
 
@@ -74,7 +89,7 @@ export default class Inventory extends HTMLElement {
      */
     renderPantryContent(items) {
         const pantry_content = document.querySelector('#pantry-content');
-        pantry_content.innerHTML = items.reduce( (html, item) => html + pantryItemComponent(item), '');
+        pantry_content.innerHTML = items.reduce((html, item) => html + pantryItemComponent(item), '');
     }
 
     /**
@@ -83,7 +98,7 @@ export default class Inventory extends HTMLElement {
     renderShoppingListContent(items) {
         const shopping_list_content = document.querySelector('#shopping-list-content');
         if (!shopping_list_content) return;
-        shopping_list_content.innerHTML = items.reduce( (html, item) => html + shoppingListItemComponent(item), '');
+        shopping_list_content.innerHTML = items.reduce((html, item) => html + shoppingListItemComponent(item), '');
     }
 
     #attachEventListeners() {
@@ -100,10 +115,10 @@ export default class Inventory extends HTMLElement {
     #attachGroupSelectFieldListeners() {
         const select_component_buttons = document.querySelectorAll('.group-select-button');
         const updateGroupSelection = (group_id) => {
-            Restock.setCurrentGroup(group_id).then( (group_was_changed) => {
+            Restock.setCurrentGroup(group_id).then((group_was_changed) => {
                 if (!group_was_changed) return; // The described group was not found for this user
                 // Load the selected group's data
-                this.#fetchDetails().then( (details_were_retrieved) => {
+                this.#fetchDetails().then((details_were_retrieved) => {
                     if (!details_were_retrieved) return;
                     this.renderGroupSelectors();
                     this.renderContent();
@@ -111,7 +126,7 @@ export default class Inventory extends HTMLElement {
                 });
             });
         }
-        select_component_buttons.forEach( select => {
+        select_component_buttons.forEach(select => {
             select.addEventListener('ionChange', e => { // Listening for the event bubbling from the select component
                 const group_id = e.target.value; // New group id
                 updateGroupSelection(group_id);
@@ -124,23 +139,23 @@ export default class Inventory extends HTMLElement {
          * array, and then traversing by (+/-) one element, wrapping if it's a lower or upper bound.
          */
         const option_values = Array.from(select_component_buttons[0].querySelectorAll('ion-select-option'))
-            .map( option => option.value);
+            .map(option => option.value);
         const selectRelativeOption = (offset) => {
             const wrap = (pos, limit) => (pos < 0) ? (limit + pos % limit) : pos % limit; // e.g.: (4, 3) = 1 and (-1, 3) = 2
-            const current_index = option_values.findIndex( group_id => group_id == this.#current_group.id);
+            const current_index = option_values.findIndex(group_id => group_id == this.#current_group.id);
             const next_index = wrap(current_index + offset, option_values.length);
             const selected_group_id = option_values[next_index];
             updateGroupSelection(selected_group_id);
         }
 
         const prev_group_buttons = document.querySelectorAll('.change-group-back');
-        prev_group_buttons.forEach( prev_group_button => {
+        prev_group_buttons.forEach(prev_group_button => {
             prev_group_button.addEventListener('click', () => {
                 selectRelativeOption(-1)
             })
         });
         const next_group_buttons = document.querySelectorAll('.change-group-forward');
-        next_group_buttons.forEach( next_group_button => {
+        next_group_buttons.forEach(next_group_button => {
             next_group_button.addEventListener('click', () => {
                 selectRelativeOption(1)
             })
@@ -153,10 +168,10 @@ export default class Inventory extends HTMLElement {
      */
     #attachSearchFilterListeners() {
         const searchbars = document.querySelectorAll('.item-searchbar');
-        searchbars.forEach( searchbar => {
+        searchbars.forEach(searchbar => {
             searchbar.addEventListener('ionInput', (e) => {
                 const needle = e.target.value;
-                const filtered_items = this.#items.filter( item => item.name.indexOf(needle) !== -1 );
+                const filtered_items = this.#items.filter(item => item.name.indexOf(needle) !== -1);
                 this.renderContent(filtered_items);
                 this.#attachItemListeners();
             });
@@ -169,10 +184,10 @@ export default class Inventory extends HTMLElement {
         const add_shopping_list_buttons = document.querySelectorAll('.add-shopping_list');
         const subtract_shopping_list_buttons = document.querySelectorAll('.subtract-shopping_list');
         // Todo: shopping-list option add-all-to-pantry
-        add_pantry_buttons.forEach( apb=> apb.addEventListener('click', this.#addOneToPantry));
-        subtract_pantry_buttons.forEach( spb => spb.addEventListener('click', this.#subtractOneFromPantry));
-        add_shopping_list_buttons.forEach( aslb => aslb.addEventListener('click', this.#addOneToShoppingList));
-        subtract_shopping_list_buttons.forEach( sslb => sslb.addEventListener('click', this.#subtractOneFromShoppingList));
+        add_pantry_buttons.forEach(apb => apb.addEventListener('click', this.#addOneToPantry));
+        subtract_pantry_buttons.forEach(spb => spb.addEventListener('click', this.#subtractOneFromPantry));
+        add_shopping_list_buttons.forEach(aslb => aslb.addEventListener('click', this.#addOneToShoppingList));
+        subtract_shopping_list_buttons.forEach(sslb => sslb.addEventListener('click', this.#subtractOneFromShoppingList));
     }
 
     #attachNewItemButtonListener() {
@@ -329,7 +344,7 @@ export default class Inventory extends HTMLElement {
             });
         };
 
-        modal.present().then( () => {
+        modal.present().then(() => {
             document.querySelector('#modal-close').addEventListener('click', () => {
                 this.#modal_item = captureModalInputAsItem();
                 modalController.dismiss(null, 'cancel');
@@ -337,45 +352,36 @@ export default class Inventory extends HTMLElement {
             document.querySelector('#modal-confirm').addEventListener('click', () => {
                 // todo: guard against bad input and incoplete fields
                 this.#modal_item = captureModalInputAsItem();
-                    modalController.dismiss(null, 'submit');
+                modalController.dismiss(null, 'submit');
             })
         });
 
-        const { data, role } = await modal.onWillDismiss();
+        const {data, role} = await modal.onWillDismiss();
         const item = this.#modal_item;
         if (role === 'submit' /* && TODO: item.isValidItem */) {
             loadingController.create({
                 message: 'Submitting form...',
                 spinner: 'bubbles'
-            }).then( (loading) => {
+            }).then((loading) => {
                 loading.present();
-                Restock.createItem(item).then( item_was_created => {
+                Restock.createItem(item).then(item_was_created => {
                     if (!item_was_created) {
-                        this.Toast('Something went wrong. Please try again later.', 'danger');
+                        raiseToast('Something went wrong. Please try again later.', 'danger');
                         return;
                     }
-                    this.Toast(`${item.name} was successfully created`)
+                    raiseToast(`${item.name} was successfully created`)
                     // Pulls all changes
                     this.#fetchDetails();
                     // Only update items
                     this.renderContent();
                     this.#attachItemListeners();
-                }).then( () => {
+                }).then(() => {
                     loading.dismiss();
                 })
             })
         }
 
         this.#modal_is_already_open = false;
-    }
-
-    async Toast(message, color = 'success') {
-        const toast = document.createElement('ion-toast');
-        toast.message = message;
-        toast.duration = 2000;
-        toast.color = color;
-        document.body.appendChild(toast);
-        return toast.present();
     }
 }
 customElements.define('inventory-page', Inventory);
