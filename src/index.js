@@ -53,7 +53,7 @@ class AppRoot extends HTMLElement {
                 <ion-split-pane content-id="menu-content" when="md">
                     <ion-menu content-id="menu-content">
                         <ion-toolbar>
-                            <img src="src/Images/RestockLogo.png" alt="RestockLogo" id="logo">
+                            <ion-img src="src/Images/RestockLogo.png" alt="RestockLogo" id="logo"></ion-img>
                             <ion-title>Menu</ion-title>
                         </ion-toolbar>
                         <ion-content class="ion-padding">
