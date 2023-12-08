@@ -283,60 +283,6 @@ export default class Inventory extends HTMLElement {
         if (!this.#current_group) return false;
         this.#items = Restock.getItemsForGroupById(this.#current_group.id);
         // this.#action_logs = Restock.getActionLogsForGroupById(this.#current_group.id);
-        if (this.#items.length == 0) { // Debug
-            const fake_items = [
-                {
-                    id: 1,
-                    group_id: 15,
-                    name: 'ketchup',
-                    description: 'tasty',
-                    category: 'default#000000',
-                    pantry_quantity: 3,
-                    minimum_threshold: 2,
-                    auto_add_to_shopping_list: true,
-                    shopping_list_quantity: 0,
-                    dont_add_to_pantry_on_purchase: false
-                },
-                {
-                    id: 3,
-                    group_id: 16,
-                    name: 'mayonnaise',
-                    description: 'A primely whipped concotion of oily vinegar eggs',
-                    category: 'default#000000',
-                    pantry_quantity: 1,
-                    minimum_threshold: 2,
-                    auto_add_to_shopping_list: true,
-                    shopping_list_quantity: 1,
-                    dont_add_to_pantry_on_purchase: false
-                },
-                {
-                    id: 2,
-                    group_id: 15,
-                    name: 'wrench',
-                    description: 'utility',
-                    category: 'default#000000',
-                    pantry_quantity: 16,
-                    minimum_threshold: 1,
-                    auto_add_to_shopping_list: true,
-                    shopping_list_quantity: 4,
-                    dont_add_to_pantry_on_purchase: true
-                },
-                {
-                    id: 5,
-                    group_id: 15,
-                    name: 'screwdriver',
-                    description: 'utility',
-                    category: 'default#000000',
-                    pantry_quantity: 0,
-                    minimum_threshold: 5,
-                    auto_add_to_shopping_list: true,
-                    shopping_list_quantity: 5,
-                    dont_add_to_pantry_on_purchase: true
-                }
-            ];
-            this.#items = fake_items.map(i => new Item(i));
-        }
-        // this.#action_logs = Restock.getActionLogsForGroupById(this.#current_group.id);
         return true;
     }
 
