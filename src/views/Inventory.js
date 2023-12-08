@@ -2,13 +2,14 @@ import Group from "../models/group.js";
 import Item from "../models/item.js";
 import Restock from "../restock.js";
 import {navigateTo} from "../index.js";
-import {loadingController, modalController} from "@ionic/core";
+import {loadingController, modalController, popoverController} from "@ionic/core";
 import inventoryContentFrame from "./components/inventory/inventory_content_frame.js";
 import pantryItemComponent from "./components/inventory/pantry_item.js";
 import shoppingListItemComponent from "./components/inventory/shopping_list_item.js";
 import createItemModal from "./components/inventory/create_item_modal.js";
 import groupSelectComponent from "./components/inventory/group_select_component.js";
 import {raiseToast} from "../utility.js";
+import ItemOptionsMenu from "./components/inventory/item_options_menu.js";
 
 /**
  * TODO:
@@ -181,18 +182,75 @@ export default class Inventory extends HTMLElement {
     #attachItemListeners() {
         const add_pantry_buttons = document.querySelectorAll('.add-pantry');
         const subtract_pantry_buttons = document.querySelectorAll('.subtract-pantry');
-        const add_shopping_list_buttons = document.querySelectorAll('.add-shopping_list');
-        const subtract_shopping_list_buttons = document.querySelectorAll('.subtract-shopping_list');
+        const add_shopping_list_buttons = document.querySelectorAll('.add-shopping-list');
+        const subtract_shopping_list_buttons = document.querySelectorAll('.subtract-shopping-list');
+        const pantry_options = document.querySelectorAll('.pantry-options');
+        const shopping_list_options = document.querySelectorAll('.shopping-list-options');
+        const edit_item_buttons = document.querySelectorAll('.edit-item-button');
+        const delete_item_buttons = document.querySelectorAll('.delete-item-button');
         // Todo: shopping-list option add-all-to-pantry
         add_pantry_buttons.forEach(apb => apb.addEventListener('click', this.#addOneToPantry));
         subtract_pantry_buttons.forEach(spb => spb.addEventListener('click', this.#subtractOneFromPantry));
         add_shopping_list_buttons.forEach(aslb => aslb.addEventListener('click', this.#addOneToShoppingList));
         subtract_shopping_list_buttons.forEach(sslb => sslb.addEventListener('click', this.#subtractOneFromShoppingList));
+
+        pantry_options.forEach( po => {
+            po.addEventListener('click' , (e) => {
+                const item_id = e.currentTarget.parentNode.id;
+                const item = this.#items.find( i => i.id == item_id);
+                const popover = this.#presentItemOptionsPopover(e).then( popover => {
+                    document.querySelector('#edit-item-button').addEventListener('click', () => {
+                        // display edit item form modal
+                        console.log("Finish implementing edit item!")
+                        this.#displayItemModal(item);
+                    });
+                    document.querySelector('#delete-item-button').addEventListener('click', () => {
+                        // ask "are u sure"
+                        // delete item
+                        console.log("Finish implementing delete item!");
+                    });
+
+                });
+
+
+                    // const { role } = await popover.onDidDismiss();
+                    // console.log(`Popover dismissed with role: ${role}`);
+                // }
+
+
+            })
+        })
+
+        edit_item_buttons.forEach( eib => {
+            eib.addEventListener('click', (e) => {
+                // Get item id
+                // pop up prefilled item modal form
+            });
+        });
+        delete_item_buttons.forEach( dib => {
+            dib.addEventListener('click', (e) => {
+                // pop up "are u sure?"
+                //
+            })
+        })
     }
+
 
     #attachNewItemButtonListener() {
         const new_item_fab = document.querySelector('#create-item-button');
-        new_item_fab.addEventListener('click', this.#displayCreateItemModal.bind(this));
+
+        /**
+         * Semaphore to prevent double opening of create-item form
+         * @type {boolean}
+         */
+        let modal_is_already_open = false;
+
+        new_item_fab.addEventListener('click', () => {
+            if (modal_is_already_open) return;
+            modal_is_already_open = true;
+            this.#displayItemModal().then( () => modal_is_already_open = false );
+
+        });
     }
 
     /**
@@ -305,71 +363,80 @@ export default class Inventory extends HTMLElement {
     }
 
     /**
-     * Semaphore to prevent double opening of create-item form
-     * @type {boolean}
+     * Popup menu that shows up next to the item element's kebab button when it's pressed.
+     * @param {Event} e
+     * @return {Promise<HTMLIonPopoverElement>}
      */
-    #modal_is_already_open = false;
+    async #presentItemOptionsPopover(e) {
+        const popover = await popoverController.create({
+            component: 'item-options-menu',
+            event: e
+        });
+        await popover.present();
+        return popover;
+    }
 
     /**
-     * Capture the item build when the modal is dismissed
-     * @type {Item}
+     * @param {Item} item
+     * @return {Promise<void>}
      */
-    #modal_item;
-
-    async #displayCreateItemModal() {
-        if (this.#modal_is_already_open) return;
-        this.#modal_is_already_open = true;
-
+    async #displayItemModal(item = null) {
         const div = document.createElement('div');
-        div.innerHTML = createItemModal();
+        div.innerHTML = createItemModal(item);
 
         const modal = await modalController.create({
             backdropDismiss: false,
             component: div
         });
 
-        const captureModalInputAsItem = () => {
-            return new Item({
-                id: 0, // Set by server
-                group_id: this.#current_group.id,
-                name: document.querySelector('#create-item-name').value,
-                description: document.querySelector('#create-item-description').value,
-                // category: document.querySelector('#create-item-category').value,
-                category: "default#000000",
-                pantry_quantity: document.querySelector('#create-item-pantry-quantity').value,
-                minimum_threshold: document.querySelector('#create-item-minimum-threshold').value,
-                auto_add_to_shopping_list: document.querySelector('#create-item-auto-add-to-shopping-list').checked,
-                shopping_list_quantity: document.querySelector('#create-item-shopping-list-quantity').value,
-                dont_add_to_pantry_on_purchase: document.querySelector('#create-item-dont-add-to-pantry-on-purchase').checked
-            });
-        };
-
         modal.present().then(() => {
+            const captureModalInputAsItem = () => {
+                item.name = document.querySelector('#create-item-name').value;
+                item.description = document.querySelector('#create-item-description').value;
+                // category: document.querySelector('#create-item-category').value,
+                item.category = "default#000000";
+                item.pantry_quantity = document.querySelector('#create-item-pantry-quantity').value;
+                item.minimum_threshold = document.querySelector('#create-item-minimum-threshold').value;
+                item.auto_add_to_shopping_list = document.querySelector('#create-item-auto-add-to-shopping-list').checked;
+                item.shopping_list_quantity = document.querySelector('#create-item-shopping-list-quantity').value;
+                item.dont_add_to_pantry_on_purchase = document.querySelector('#create-item-dont-add-to-pantry-on-purchase').checked;
+            };
+
+            if (!item) {
+                item = new Item({
+                    id: 0,
+                    group_id: this.#current_group.id
+                });
+            }
+
             document.querySelector('#modal-close').addEventListener('click', () => {
-                this.#modal_item = captureModalInputAsItem();
+                captureModalInputAsItem();
                 modalController.dismiss(null, 'cancel');
             })
             document.querySelector('#modal-confirm').addEventListener('click', () => {
                 // todo: guard against bad input and incoplete fields
-                this.#modal_item = captureModalInputAsItem();
+                captureModalInputAsItem();
                 modalController.dismiss(null, 'submit');
             })
         });
 
         const {data, role} = await modal.onWillDismiss();
-        const item = this.#modal_item;
         if (role === 'submit' /* && TODO: item.isValidItem */) {
             loadingController.create({
                 message: 'Submitting form...',
                 spinner: 'bubbles'
             }).then((loading) => {
                 loading.present();
-                Restock.createItem(item).then(item_was_created => {
-                    if (!item_was_created) {
+                const transaction = item.id == 0 ?
+                    Restock.createItem(item) :
+                    Restock.updateItem(item)
+                ;
+                transaction.then(transaction_was_successful => {
+                    if (!transaction_was_successful) {
                         raiseToast('Something went wrong. Please try again later.', 'danger');
                         return;
                     }
-                    raiseToast(`${item.name} was successfully created`)
+                    raiseToast(`${item.name} was successfully ${item.id == 0 ? 'created' : 'updated'}`);
                     // Pulls all changes
                     this.#fetchDetails();
                     // Only update items
@@ -380,8 +447,8 @@ export default class Inventory extends HTMLElement {
                 })
             })
         }
-
-        this.#modal_is_already_open = false;
     }
+
+
 }
 customElements.define('inventory-page', Inventory);
