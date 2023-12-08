@@ -32,7 +32,8 @@ class AppRoot extends HTMLElement {
             Restock.init().then(() => {
                 this.render();
                 this.updateRoutes();
-                router.addEventListener('ionRouteDidChange', (e) => {
+                router.addEventListener('ionRouteWillChange', (e) => {
+                    console.log('ROUTE DID CHANGE')
                     this.updateRoutes();
                 })
                 loading.dismiss();
@@ -79,12 +80,12 @@ class AppRoot extends HTMLElement {
      * If the user is logged in and attempts to load the login page, they'll be redirected to the 'home' page.
      * @return {string}
      */
-    updateRoutes() {
+    updateRoutes() { console.log('fire!~')
         const active_session = Restock.hasActiveSession();
         const group_id = Restock.getCurrentGroup()?.id;
         let default_page = {
             component: "manage-groups-page",
-            route: "/manage-groups"
+            route: "/"
         };
         if (group_id) {
             default_page.component = "inventory-page";
