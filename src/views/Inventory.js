@@ -337,16 +337,24 @@ export default class Inventory extends HTMLElement {
         });
 
         modal.present().then(() => {
-            const captureModalInputAsItem = () => {
-                item.name = document.querySelector('#create-item-name').value;
-                item.description = document.querySelector('#create-item-description').value;
-                // category: document.querySelector('#create-item-category').value,
+            const name_input = document.querySelector('#create-item-name');
+            const description_input = document.querySelector('#create-item-description');
+            // const category_input = document.querySelector('#create-item-category');
+            const pantry_quantity_input = document.querySelector('#create-item-pantry-quantity');
+            const minimum_threshold_input = document.querySelector('#create-item-minimum-threshold');
+            const auto_add_top_shopping_list_input = document.querySelector('#create-item-auto-add-to-shopping-list');
+            const shopping_list_quantity_input = document.querySelector('#create-item-shopping-list-quantity');
+            const add_to_pantry_on_purchase = document.querySelector('#create-item-add-to-pantry-on-purchase');
+            const captureModalInputToItem = () => {
+                item.name = name_input.value;
+                item.description = description_input.value;
+                // category:category_input.value,
                 item.category = "default#000000";
-                item.pantry_quantity = document.querySelector('#create-item-pantry-quantity').value;
-                item.minimum_threshold = document.querySelector('#create-item-minimum-threshold').value;
-                item.auto_add_to_shopping_list = document.querySelector('#create-item-auto-add-to-shopping-list').checked;
-                item.shopping_list_quantity = document.querySelector('#create-item-shopping-list-quantity').value;
-                item.add_to_pantry_on_purchase = document.querySelector('#create-item-add-to-pantry-on-purchase').checked;
+                item.pantry_quantity = pantry_quantity_input.value;
+                item.minimum_threshold = minimum_threshold_input.value;
+                item.auto_add_to_shopping_list = auto_add_top_shopping_list_input.checked;
+                item.shopping_list_quantity = shopping_list_quantity_input.value;
+                item.add_to_pantry_on_purchase = add_to_pantry_on_purchase.checked;
             };
 
             if (!item) {
@@ -357,12 +365,12 @@ export default class Inventory extends HTMLElement {
             }
 
             document.querySelector('#modal-close').addEventListener('click', () => {
-                captureModalInputAsItem();
+                captureModalInputToItem();
                 modalController.dismiss(null, 'cancel');
             })
             document.querySelector('#modal-confirm').addEventListener('click', () => {
                 // todo: guard against bad input and incoplete fields
-                captureModalInputAsItem();console.log(item);
+                captureModalInputToItem();
                 modalController.dismiss(null, 'submit');
             })
         });
