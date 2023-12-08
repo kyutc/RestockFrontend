@@ -284,7 +284,6 @@ export default class Restock {
     }
 
     static async deleteItem(item) {
-        console.log("DELETEING ITEM", item);
         const response = await Api.deleteItem(this.#session, item);
         if (!response.ok) {
             const body = await response.text();
