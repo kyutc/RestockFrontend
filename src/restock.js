@@ -278,9 +278,7 @@ export default class Restock {
         }
         console.log("DEBUG: Restock.updateItem -- Successfully updated item");
         const data = await response.json();
-        const updated_item = new Item(data);
-        const index = this.#items[updated_item.group_id].findIndex( old_item => old_item.id == updated_item.id);
-        this.#items[updated_item.group_id][index] = updated_item;
+        item.update(data);
         // updated_item.save()
         return true;
     }
