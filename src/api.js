@@ -369,4 +369,23 @@ export default class Api {
         };
         return fetch(url, options);
     }
+
+    /**
+     * Update item
+     * @param token
+     * @param {Item} item
+     * @return {Promise<Response>}
+     */
+    static async updateItem(token, item) {
+        const url = this._base_url + `group/${item.group_id}/item/${item.id}`;
+        const options = {
+            method: "PUT",
+            body: JSON.stringify(item),
+            headers: {
+                ...this._headers,
+                "X-RestockUserApiToken": token
+            }
+        };
+        return fetch(url, options);
+    }
 }
