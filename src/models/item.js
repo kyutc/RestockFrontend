@@ -146,9 +146,10 @@ export default class {
      * @return {boolean} true if change took place
      */
     subtractOneFromPantry() {
-        const previous_pantry_quantity = this.pantry_quantity;
-        this.pantry_quantity = Math.max(0, this.pantry_quantity-1);
-        return this.updateShoppingList() || this.pantry_quantity < previous_pantry_quantity;
+        if (!(this.pantry_quantity > 0)) return false; // Nothing changed
+        this.pantry_quantity = this.pantry_quantity-1;
+        this.updateAmountInShoppingList();
+        return true;
     }
 
     /**
@@ -171,7 +172,7 @@ export default class {
     /**
      * @return {boolean}
      */
-    updateShoppingList() {
+    updateAmountInShoppingList() {
         if (!this.shouldBeAddedToShoppingList()) return false;
         const difference_to_add_to_shopping_list = this.minimum_threshold - this.pantry_quantity;
         const prev_shopping_list_quantity = this.shopping_list_quantity;
@@ -182,7 +183,14 @@ export default class {
     /**
      * @return {boolean}
      */
-    isPantryBelowMinimumThreshold() {
+    isInPantryAtMinimumThreshold() {
+        return (this.minimum_threshold  === this.pantry_quantity);
+    }
+
+    /**
+     * @return {boolean}
+     */
+    isInPantryBelowMinimumThreshold() {
         return (this.minimum_threshold > this.pantry_quantity);
     }
 
@@ -190,6 +198,6 @@ export default class {
      * @return {boolean}
      */
     shouldBeAddedToShoppingList() {
-        if (!(this.auto_add_to_shopping_list && this.isPantryBelowMinimumThreshold())) return false;
+        return this.auto_add_to_shopping_list && this.isInPantryBelowMinimumThreshold();
     }
 }

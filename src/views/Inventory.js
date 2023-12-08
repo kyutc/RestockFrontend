@@ -266,11 +266,22 @@ export default class Inventory extends HTMLElement {
      * Update display quantity for already rendered items
      * @param {Item} item
      */
-    #updateItemQuantities(item) {
+    #updateDisplayedItemQuantities(item) {
         const pantry_item = document.querySelector(`#p-${item.id}`);
         const shopping_list_item = document.querySelector(`#sl-${item.id}`);
-        if (pantry_item) pantry_item.innerHTML = item.pantry_quantity;
-        if (shopping_list_item) shopping_list_item.innerHTML = item.shopping_list_quantity;
+        if (pantry_item) {
+            const chip = pantry_item.querySelector('ion-chip');
+            if (item.isInPantryAtMinimumThreshold()) chip.color = "warning";
+            else if (item.isInPantryBelowMinimumThreshold()) chip.color = "danger";
+            else chip.color = "default";
+            chip.innerHTML = item.pantry_quantity;
+        }
+        if (shopping_list_item) {
+            if (item.shopping_list_quantity > 0) shopping_list_item.classList.remove('hidden');
+            else shopping_list_item.classList.add('hidden');
+            const chip = shopping_list_item.querySelector('ion-chip')
+            chip.innerHTML = item.shopping_list_quantity;
+        }
     }
 
     /**
@@ -279,7 +290,8 @@ export default class Inventory extends HTMLElement {
      * @return {Item|null}
      */
     #getItemReferencedByEvent = (e) => {
-        const item_id = e.currentTarget.parentNode.id; // Should be an <ion-item> element
+        const element_id = e.currentTarget.parentNode.id; // Should be an <ion-item> element
+        const item_id = element_id.substr(element_id.indexOf('-')+1);
         const item = this.#items.find(i => i.id == item_id);
         if (!item) return null;
         return item;
@@ -287,22 +299,22 @@ export default class Inventory extends HTMLElement {
     #addOneToPantry = (e) => {
         const item = this.#getItemReferencedByEvent(e);
         if (!item) return;
-        if (item.addOneToPantry()) this.#updateItemQuantities(item);
+        if (item.addOneToPantry()) this.#updateDisplayedItemQuantities(item);
     }
     #subtractOneFromPantry = (e) => {
         const item = this.#getItemReferencedByEvent(e);
         if (!item) return;
-        if (item.subtractOneFromPantry()) this.#updateItemQuantities(item);
+        if (item.subtractOneFromPantry()) this.#updateDisplayedItemQuantities(item);
     }
     #addOneToShoppingList = (e) => {
         const item = this.#getItemReferencedByEvent(e);
         if (!item) return;
-        if (item.addOneToShoppingList()) this.#updateItemQuantities(item);
+        if (item.addOneToShoppingList()) this.#updateDisplayedItemQuantities(item);
     }
     #subtractOneFromShoppingList = (e) => {
         const item = this.#getItemReferencedByEvent(e);
         if (!item) return;
-        if (item.subtractOneFromShoppingList()) this.#updateItemQuantities(item);
+        if (item.subtractOneFromShoppingList()) this.#updateDisplayedItemQuantities(item);
     }
 
     /**
