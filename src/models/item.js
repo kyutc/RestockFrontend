@@ -52,6 +52,7 @@ export default class {
             id: this.id,
             group_id: this.group_id,
             name: this.name,
+            description: this.description,
             category: this.category,
             pantry_quantity: this.pantry_quantity,
             minimum_threshold: this.minimum_threshold,

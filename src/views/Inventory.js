@@ -358,7 +358,7 @@ export default class Inventory extends HTMLElement {
             })
             document.querySelector('#modal-confirm').addEventListener('click', () => {
                 // todo: guard against bad input and incoplete fields
-                captureModalInputAsItem();
+                captureModalInputAsItem();console.log(item);
                 modalController.dismiss(null, 'submit');
             })
         });
