@@ -119,12 +119,11 @@ export default class Inventory extends HTMLElement {
             Restock.setCurrentGroup(group_id).then((group_was_changed) => {
                 if (!group_was_changed) return; // The described group was not found for this user
                 // Load the selected group's data
-                this.#fetchDetails().then((details_were_retrieved) => {
-                    if (!details_were_retrieved) return;
+                if (this.#fetchDetails()) {
                     this.renderGroupSelectors();
                     this.renderContent();
                     this.#attachItemListeners();
-                });
+                }
             });
         }
         select_component_buttons.forEach(select => {
@@ -186,8 +185,6 @@ export default class Inventory extends HTMLElement {
         const subtract_shopping_list_buttons = document.querySelectorAll('.subtract-shopping-list');
         const pantry_options = document.querySelectorAll('.pantry-options');
         const shopping_list_options = document.querySelectorAll('.shopping-list-options');
-        const edit_item_buttons = document.querySelectorAll('.edit-item-button');
-        const delete_item_buttons = document.querySelectorAll('.delete-item-button');
         // Todo: shopping-list option add-all-to-pantry
         add_pantry_buttons.forEach(apb => apb.addEventListener('click', this.#addOneToPantry));
         subtract_pantry_buttons.forEach(spb => spb.addEventListener('click', this.#subtractOneFromPantry));
@@ -208,7 +205,7 @@ export default class Inventory extends HTMLElement {
                         // ask "are u sure"
                         // delete item
                         loadingController.create({
-                            message: 'Submitting form...',
+                            message: 'Deleting item...',
                             spinner: 'bubbles'
                         }).then((loading) => {
                             loading.present();
@@ -219,43 +216,22 @@ export default class Inventory extends HTMLElement {
                                     return;
                                 }
                                 popover.dismiss();
-                                raiseToast(`${item.name} was successfully ${item.id == 0 ? 'created' : 'updated'}`);
+                                raiseToast(`${item.name} was successfully deleted`);
                                 // Pulls all changes
-                                this.#fetchDetails();
-                                // Only update items
-                                this.renderContent();
-                                this.#attachItemListeners();
+                                if (this.#fetchDetails()) {
+                                    this.renderGroupSelectors();
+                                    this.renderContent();
+                                    this.#attachItemListeners();
+                                }
                             }).then(() => {
                                 loading.dismiss();
-                            })
-                        })
+                            });
+                        });
                     });
-
                 });
-
-
-                    // const { role } = await popover.onDidDismiss();
-                    // console.log(`Popover dismissed with role: ${role}`);
-                // }
-
-
-            })
-        })
-
-        edit_item_buttons.forEach( eib => {
-            eib.addEventListener('click', (e) => {
-                // Get item id
-                // pop up prefilled item modal form
             });
         });
-        delete_item_buttons.forEach( dib => {
-            dib.addEventListener('click', (e) => {
-                // pop up "are u sure?"
-                //
-            })
-        })
     }
-
 
     #attachNewItemButtonListener() {
         const new_item_fab = document.querySelector('#create-item-button');
@@ -276,9 +252,9 @@ export default class Inventory extends HTMLElement {
 
     /**
      * Load the currently selected group, it's items, and logs.
-     * @return {Promise<boolean>}
+     * @return {boolean}
      */
-    async #fetchDetails() {
+    #fetchDetails() {
         this.#current_group = Restock.getCurrentGroup();
         if (!this.#current_group) return false;
         this.#items = Restock.getItemsForGroupById(this.#current_group.id);
@@ -405,10 +381,11 @@ export default class Inventory extends HTMLElement {
                     }
                     raiseToast(`${item.name} was successfully ${item.id == 0 ? 'created' : 'updated'}`);
                     // Pulls all changes
-                    this.#fetchDetails();
-                    // Only update items
-                    this.renderContent();
-                    this.#attachItemListeners();
+                    if (this.#fetchDetails()) {
+                        this.renderGroupSelectors();
+                        this.renderContent();
+                        this.#attachItemListeners();
+                    }
                 }).then(() => {
                     loading.dismiss();
                 })
