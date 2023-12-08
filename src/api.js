@@ -357,7 +357,7 @@ export default class Api {
         formData.append('minimum_threshold', item.minimum_threshold);
         formData.append('auto_add_to_shopping_list', item.auto_add_to_shopping_list);
         formData.append('shopping_list_quantity', item.shopping_list_quantity);
-        formData.append('dont_add_to_pantry_on_purchase', item.dont_add_to_pantry_on_purchase);
+        formData.append('add_to_pantry_on_purchase', item.add_to_pantry_on_purchase);
 
         const options = {
             method: "POST",
@@ -378,7 +378,6 @@ export default class Api {
      */
     static async updateItem(token, item) {
         const url = this._base_url + `group/${item.group_id}/item/${item.id}`;
-        console.log(JSON.stringify(item));
         const options = {
             method: "PUT",
             body: item.toJSON(),

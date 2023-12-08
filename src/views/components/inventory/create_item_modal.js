@@ -36,7 +36,7 @@ export default function createItemModal(item = null) {
                     <ion-checkbox label-placement="start" justify="end" fill="outline" id="create-item-auto-add-to-shopping-list" checked="${item?.auto_add_to_shopping_list ?? false}">Automatically add to shopping list</ion-checkbox>
                 </ion-item>
                 <ion-item>
-                    <ion-checkbox label-placement="start" justify="end" fill="outline" id="create-item-dont-add-to-pantry-on-purchase" checked="${item?.dont_add_to_pantry_on_purchase ?? false}">Don't add to pantry on purchase</ion-checkbox>
+                    <ion-checkbox label-placement="start" justify="end" fill="outline" id="create-item-add-to-pantry-on-purchase" checked="${item?.add_to_pantry_on_purchase ?? true}">Add to pantry on purchase</ion-checkbox>
                 </ion-item>
                 <ion-item>
                     <ion-grid><ion-row class="ion-justify-content-end"><ion-col size="2">

@@ -201,8 +201,8 @@ export default class Inventory extends HTMLElement {
                 const popover = this.#presentItemOptionsPopover(e).then( popover => {
                     document.querySelector('#edit-item-button').addEventListener('click', () => {
                         // display edit item form modal
-                        console.log("Finish implementing edit item!")
                         this.#displayItemModal(item);
+                        popover.dismiss();
                     });
                     document.querySelector('#delete-item-button').addEventListener('click', () => {
                         // ask "are u sure"
@@ -366,7 +366,7 @@ export default class Inventory extends HTMLElement {
                 item.minimum_threshold = document.querySelector('#create-item-minimum-threshold').value;
                 item.auto_add_to_shopping_list = document.querySelector('#create-item-auto-add-to-shopping-list').checked;
                 item.shopping_list_quantity = document.querySelector('#create-item-shopping-list-quantity').value;
-                item.dont_add_to_pantry_on_purchase = document.querySelector('#create-item-dont-add-to-pantry-on-purchase').checked;
+                item.add_to_pantry_on_purchase = document.querySelector('#create-item-add-to-pantry-on-purchase').checked;
             };
 
             if (!item) {
@@ -415,7 +415,5 @@ export default class Inventory extends HTMLElement {
             })
         }
     }
-
-
 }
 customElements.define('inventory-page', Inventory);

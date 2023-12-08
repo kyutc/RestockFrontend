@@ -27,7 +27,7 @@ export default class {
     #shopping_list_quantity;
 
     /** @type {boolean} */
-    #dont_add_to_pantry_on_purchase;
+    #add_to_pantry_on_purchase;
 
     constructor(obj) {
         this.#id = obj.id;
@@ -44,7 +44,7 @@ export default class {
         this.#minimum_threshold = updated_item.minimum_threshold;
         this.#auto_add_to_shopping_list = updated_item.auto_add_to_shopping_list;
         this.#shopping_list_quantity = updated_item.shopping_list_quantity;
-        this.#dont_add_to_pantry_on_purchase = updated_item.dont_add_to_pantry_on_purchase;
+        this.#add_to_pantry_on_purchase = updated_item.add_to_pantry_on_purchase;
     }
 
     toJSON() {
@@ -57,7 +57,7 @@ export default class {
             minimum_threshold: this.minimum_threshold,
             auto_add_to_shopping_list: this.auto_add_to_shopping_list,
             shopping_list_quantity: this.shopping_list_quantity,
-            dont_add_to_pantry_on_purchase: this.dont_add_to_pantry_on_purchase
+            add_to_pantry_on_purchase: this.add_to_pantry_on_purchase
         })
     }
 
@@ -125,12 +125,12 @@ export default class {
         this.#shopping_list_quantity = value;
     }
 
-    get dont_add_to_pantry_on_purchase() {
-        return this.#dont_add_to_pantry_on_purchase;
+    get add_to_pantry_on_purchase() {
+        return this.#add_to_pantry_on_purchase;
     }
 
-    set dont_add_to_pantry_on_purchase(value) {
-        this.#dont_add_to_pantry_on_purchase = value;
+    set add_to_pantry_on_purchase(value) {
+        this.#add_to_pantry_on_purchase = value;
     }
 
     /**
@@ -147,11 +147,7 @@ export default class {
     subtractOneFromPantry() {
         const previous_pantry_quantity = this.pantry_quantity;
         this.pantry_quantity = Math.max(0, this.pantry_quantity-1);
-        if (this.pantry_quantity == previous_pantry_quantity) return false;
-        if (this.isPantryBelowMinimumThreshold() && this.auto_add_to_shopping_list && this.isShoppingListBelowMinimumThreshold()) {
-            this.shopping_list_quantity = this.minimum_threshold;
-        }
-        return true;
+        return this.updateShoppingList() || this.pantry_quantity < previous_pantry_quantity;
     }
 
     /**
@@ -171,7 +167,16 @@ export default class {
         return this.shopping_list_quantity != previous_shopping_list_quantity;
     }
 
-
+    /**
+     * @return {boolean}
+     */
+    updateShoppingList() {
+        if (!this.shouldBeAddedToShoppingList()) return false;
+        const difference_to_add_to_shopping_list = this.minimum_threshold - this.pantry_quantity;
+        const prev_shopping_list_quantity = this.shopping_list_quantity;
+        this.shopping_list_quantity = Math.max(difference_to_add_to_shopping_list, this.shopping_list_quantity);
+        return this.shopping_list_quantity !== prev_shopping_list_quantity;
+    }
 
     /**
      * @return {boolean}
@@ -183,7 +188,7 @@ export default class {
     /**
      * @return {boolean}
      */
-    isShoppingListBelowMinimumThreshold() {
-        return (this.minimum_threshold > this.shopping_list_quantity);
+    shouldBeAddedToShoppingList() {
+        if (!(this.auto_add_to_shopping_list && this.isPantryBelowMinimumThreshold())) return false;
     }
 }

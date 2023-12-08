@@ -278,6 +278,7 @@ export default class Restock {
         }
         console.log("DEBUG: Restock.updateItem -- Successfully updated item");
         const data = await response.json();
+        console.log(JSON.stringify(data));
         item.update(data);
         // updated_item.save()
         return true;
@@ -391,12 +392,6 @@ export default class Restock {
     static #setLoaded(group_id) { this.#loaded_groups[group_id] = true; }
     static #setUnloaded(group_id)   { this.#loaded_groups[group_id] = false; }
 
-    /*
-    get items
-        get items for the last-used-group-id, fail if not set
-    create item
-    updateitem
-     */
     /**
      * Purge application state
      */
