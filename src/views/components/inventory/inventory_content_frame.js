@@ -63,10 +63,15 @@ export default function inventoryContentFrame() {
                 </ion-col>
             </ion-row>
         </ion-grid>
+        <div class="history-container">
+            <ion-header>
+                <ion-toolbar><ion-title>History</ion-title></ion-toolbar>
+            </ion-header> 
+            <ion-list id="history-content"></ion-list>
+        </div>
         <ion-fab slot="fixed" vertical="bottom" horizontal="end">
             <ion-fab-button id="create-item-button"><ion-icon name="add"></ion-icon></ion-fab-button>
         </ion-fab>
-        <ion-row class="history-box"> History will go here </ion-row>
     </ion-content>
     `;
 }

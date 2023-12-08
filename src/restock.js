@@ -133,13 +133,13 @@ export default class Restock {
      * Get the current list of items for the described group
      * @return {Array<Item>}
      */
-    static getItemsForGroupById(group_id) {
-        const group = this.#current_group.id == group_id ?
-            this.getCurrentGroup() :
-            this.getGroupById(group_id)
-        ;
-        return this.#items[group.id];
-    }
+    static getItemsForGroupById(group_id) { return this.#items[group_id]; }
+
+    /**
+     * Get the current list of items for the described group
+     * @return {Array<ActionLog>}
+     */
+    static getActionLogsForGroupById(group_id) { return this.#action_logs[group_id]; }
 
     static async refreshUserData() {
         // hit user details endpoint, update user object
@@ -220,7 +220,10 @@ export default class Restock {
         }
         console.log("DEBUG: Restock.createGroup -- Successfully created group");
         const data = await response.json();
-        this.#groups.push(new Group(data));
+        const new_group = new Group(data);
+        this.#groups.push(new_group);
+        this.#action_logs[new_group.id] = [];
+        await this.#populateGroupHistory(new_group.id);
         return true;
     }
 
@@ -232,6 +235,7 @@ export default class Restock {
             return false;
         }
         console.log("DEBUG: Restock.updateGroup -- Successfully updated group");
+        await this.#populateGroupHistory(id);
         const data = await response.json();
         // The group should already exist locally before being updated. If a group that hasn't been indexed here is
         // modified, then this will throw an error.
@@ -262,6 +266,7 @@ export default class Restock {
             return false;
         }
         console.log("DEBUG: Restock.createItem -- Successfully created item");
+        await this.#populateGroupHistory(item.group_id);
         const data = await response.json();
         const new_item = new Item(data);
         // new_item.save();
@@ -277,6 +282,7 @@ export default class Restock {
             return false;
         }
         console.log("DEBUG: Restock.updateItem -- Successfully updated item");
+        await this.#populateGroupHistory(item.group_id);
         const data = await response.json();
         item.update(data);
         // updated_item.save()
@@ -291,6 +297,7 @@ export default class Restock {
             return false;
         }
         console.log("DEBUG: Restock.deleteItem -- Successfully deleted item");
+        await this.#populateGroupHistory(item.group_id);
         const index_to_remove = this.#items[item.group_id].findIndex( old_item => old_item.id == item.id);
         const removed_item = this.#items[item.group_id].splice(index_to_remove, 1);
         // restockdb.deleteItem
@@ -377,12 +384,11 @@ export default class Restock {
             this.#items[group_id].push(item);
         });
 
-        
-        this.#action_logs[group.id].length = 0;
+        this.#action_logs[group_id].length = 0;
         data.action_logs.forEach(action_log_data => {
             const action_log = new ActionLog(action_log_data);
             // action_log.save()
-            return action_log;
+            this.#action_logs[group_id].push(action_log);
         });
         return true;
     }
@@ -390,6 +396,29 @@ export default class Restock {
     static #isLoaded(group_id) { return this.#loaded_groups[group_id] = this.#loaded_groups[group_id] ?? false; }
     static #setLoaded(group_id) { this.#loaded_groups[group_id] = true; }
     static #setUnloaded(group_id)   { this.#loaded_groups[group_id] = false; }
+
+    /**
+     * Retrieve an array of a group's action logs
+     * @param group_id
+     * @return {Promise<boolean>}
+     */
+    static async #populateGroupHistory(group_id) {
+        const response = await Api.getGroupHistory(this.#session, group_id);
+        if (!response.ok) {
+            const body = await response.text();
+            console.log("DEBUG: Restock.populateGroupHistory -- Failed to retrieve history", body);
+            return false;
+        }
+        console.log("DEBUG: Restock.populateGroupHistory -- Successfully retrieved history");
+        const data = await response.json();
+        data.slice(this.#action_logs[group_id].length) // Only copy records that we don't have
+            .forEach( action_log_data => {
+                const action_log = new ActionLog(action_log_data);
+                // action_log.save()
+                this.#action_logs[group_id].push(action_log)
+            });
+        return true;
+    }
 
     /**
      * Purge application state

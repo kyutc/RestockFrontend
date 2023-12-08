@@ -10,6 +10,7 @@ import createItemModal from "./components/inventory/create_item_modal.js";
 import groupSelectComponent from "./components/inventory/group_select_component.js";
 import {raiseToast} from "../utility.js";
 import ItemOptionsMenu from "./components/inventory/item_options_menu.js";
+import historyItem from "./components/inventory/history_item.js";
 
 /**
  * TODO:
@@ -23,6 +24,8 @@ export default class Inventory extends HTMLElement {
     #current_group;
     /** @type {Array<Item>} */
     #items;
+    /** @type {Array<ActionLog>} */
+    #action_logs;
 
     connectedCallback() {
         console.log("DEBUG: pantry.js -- Initializing pantry page")
@@ -63,6 +66,7 @@ export default class Inventory extends HTMLElement {
         const items = filtered_items ?? this.#items;
         this.renderPantryContent(items);
         this.renderShoppingListContent(items);
+        this.renderGroupHistory();
     }
 
     /**
@@ -93,6 +97,12 @@ export default class Inventory extends HTMLElement {
         const shopping_list_content = document.querySelector('#shopping-list-content');
         if (!shopping_list_content) return;
         shopping_list_content.innerHTML = items.reduce((html, item) => html + shoppingListItemComponent(item), '');
+    }
+
+    renderGroupHistory() {
+        const history_content = document.querySelector('#history-content');
+        if (!history_content) return;
+        history_content.innerHTML = this.#action_logs.reduce((html, action_log) => html + historyItem(action_log), '');
     }
 
     #attachEventListeners() {
@@ -250,7 +260,7 @@ export default class Inventory extends HTMLElement {
         this.#current_group = Restock.getCurrentGroup();
         if (!this.#current_group) return false;
         this.#items = Restock.getItemsForGroupById(this.#current_group.id);
-        // this.#action_logs = Restock.getActionLogsForGroupById(this.#current_group.id);
+        this.#action_logs = Restock.getActionLogsForGroupById(this.#current_group.id);
         return true;
     }
 

@@ -389,6 +389,12 @@ export default class Api {
         return fetch(url, options);
     }
 
+    /**
+     * Delete item
+     * @param token
+     * @param {Item} item
+     * @return {Promise<Response>}
+     */
     static async deleteItem(token, item) {
         const url = this._base_url + `group/${item.group_id}/item/${item.id}`;
         const options = {
@@ -399,6 +405,24 @@ export default class Api {
             }
         };
         return fetch(url, options);
+    }
 
+
+    /**
+     * Fetch history
+     * @param token
+     * @param {string|number} group_id
+     * @return {Promise<Response>}
+     */
+    static async getGroupHistory(token, group_id) {
+        const url = this._base_url + `group/${group_id}/history`;
+        const options = {
+            method: "GET",
+            headers: {
+                ...this._headers,
+                "X-RestockUserApiToken": token
+            }
+        };
+        return fetch(url, options);
     }
 }
