@@ -13,17 +13,10 @@ import ItemOptionsMenu from "./components/inventory/item_options_menu.js";
 
 /**
  * TODO:
- *  Options kebab -
- *      update item
- *      Delete item
  *  Update item after incr/decr
  *  Group history
  *  Shopping list
- *      If an item is added to the shopping list wihle it exists in the pantry list, it should become visible
  *      Action button to mark item as purchased
- *  Pantry
- *      Warning color on items that are at the minimum threshold
- *      Danger color on items that are at 0
  */
 export default class Inventory extends HTMLElement {
     /** @type {Group} */
@@ -193,8 +186,7 @@ export default class Inventory extends HTMLElement {
 
         pantry_options.forEach( po => {
             po.addEventListener('click' , (e) => {
-                const item_id = e.currentTarget.parentNode.id;
-                const item = this.#items.find( i => i.id == item_id);
+                const item = this.#getItemReferencedByEvent(e);
                 const popover = this.#presentItemOptionsPopover(e).then( popover => {
                     document.querySelector('#edit-item-button').addEventListener('click', () => {
                         // display edit item form modal
