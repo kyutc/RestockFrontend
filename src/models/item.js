@@ -47,6 +47,20 @@ export default class {
         this.#dont_add_to_pantry_on_purchase = updated_item.dont_add_to_pantry_on_purchase;
     }
 
+    toJSON() {
+        return JSON.stringify({
+            id: this.id,
+            group_id: this.group_id,
+            name: this.name,
+            category: this.category,
+            pantry_quantity: this.pantry_quantity,
+            minimum_threshold: this.minimum_threshold,
+            auto_add_to_shopping_list: this.auto_add_to_shopping_list,
+            shopping_list_quantity: this.shopping_list_quantity,
+            dont_add_to_pantry_on_purchase: this.dont_add_to_pantry_on_purchase
+        })
+    }
+
     get id() {
         return this.#id;
     }

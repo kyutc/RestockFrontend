@@ -378,9 +378,10 @@ export default class Api {
      */
     static async updateItem(token, item) {
         const url = this._base_url + `group/${item.group_id}/item/${item.id}`;
+        console.log(JSON.stringify(item));
         const options = {
             method: "PUT",
-            body: JSON.stringify(item),
+            body: item.toJSON(),
             headers: {
                 ...this._headers,
                 "X-RestockUserApiToken": token
