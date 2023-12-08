@@ -32,14 +32,19 @@ export default class {
     constructor(obj) {
         this.#id = obj.id;
         this.#group_id = obj.group_id;
-        this.#name = obj.name;
-        this.#description = obj.description;
-        this.#category = obj.category;
-        this.#pantry_quantity = obj.pantry_quantity;
-        this.#minimum_threshold = obj.minimum_threshold;
-        this.#auto_add_to_shopping_list = obj.auto_add_to_shopping_list;
-        this.#shopping_list_quantity = obj.shopping_list_quantity;
-        this.#dont_add_to_pantry_on_purchase = obj.dont_add_to_pantry_on_purchase;
+        this.update(obj);
+    }
+
+    /** @param {this} updated_item */
+    update(updated_item) {
+        this.#name = updated_item.name;
+        this.#description = updated_item.description;
+        this.#category = updated_item.category;
+        this.#pantry_quantity = updated_item.pantry_quantity;
+        this.#minimum_threshold = updated_item.minimum_threshold;
+        this.#auto_add_to_shopping_list = updated_item.auto_add_to_shopping_list;
+        this.#shopping_list_quantity = updated_item.shopping_list_quantity;
+        this.#dont_add_to_pantry_on_purchase = updated_item.dont_add_to_pantry_on_purchase;
     }
 
     get id() {
