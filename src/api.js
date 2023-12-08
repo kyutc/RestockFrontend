@@ -388,4 +388,17 @@ export default class Api {
         };
         return fetch(url, options);
     }
+
+    static async deleteItem(token, item) {
+        const url = this._base_url + `group/${item.group_id}/item/${item.id}`;
+        const options = {
+            method: "DELETE",
+            headers: {
+                ...this._headers,
+                "X-RestockUserApiToken": token
+            }
+        };
+        return fetch(url, options);
+
+    }
 }

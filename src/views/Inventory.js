@@ -207,7 +207,28 @@ export default class Inventory extends HTMLElement {
                     document.querySelector('#delete-item-button').addEventListener('click', () => {
                         // ask "are u sure"
                         // delete item
-                        console.log("Finish implementing delete item!");
+                        loadingController.create({
+                            message: 'Submitting form...',
+                            spinner: 'bubbles'
+                        }).then((loading) => {
+                            loading.present();
+                            const transaction = Restock.deleteItem(item);
+                            transaction.then(transaction_was_successful => {
+                                if (!transaction_was_successful) {
+                                    raiseToast('Something went wrong. Please try again later.', 'danger');
+                                    return;
+                                }
+                                popover.dismiss();
+                                raiseToast(`${item.name} was successfully ${item.id == 0 ? 'created' : 'updated'}`);
+                                // Pulls all changes
+                                this.#fetchDetails();
+                                // Only update items
+                                this.renderContent();
+                                this.#attachItemListeners();
+                            }).then(() => {
+                                loading.dismiss();
+                            })
+                        })
                     });
 
                 });

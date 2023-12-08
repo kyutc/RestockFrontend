@@ -284,6 +284,7 @@ export default class Restock {
     }
 
     static async deleteItem(item) {
+        console.log("DELETEING ITEM", item);
         const response = await Api.deleteItem(this.#session, item);
         if (!response.ok) {
             const body = await response.text();
@@ -294,6 +295,7 @@ export default class Restock {
         const index_to_remove = this.#items[item.group_id].findIndex( old_item => old_item.id == item.id);
         const removed_item = this.#items[item.group_id].splice(index_to_remove, 1);
         // restockdb.deleteItem
+        return true;
     }
 
     ////////////
