@@ -353,8 +353,9 @@ export default class Restock {
             this.#action_logs.splice(removed_group.id);
         }
         await this.#populateDetailsForGroupById(group_member.group_id)
-        const index_to_remove = this.#group_members[group_member.group_id].findIndex( old_group_member => old_group_member.id == group_member.id);
-        const removed_item = this.#group_members[group_member.group_id].splice(index_to_remove, 1);
+        // const index_to_remove = this.#group_members[group_member.group_id].findIndex( old_group_member => old_group_member.id == group_member.id);
+        this.#populateDetailsForGroupById(group_member.group_id); // Todo: quick fix
+        // const removed_item = this.#group_members[group_member.group_id].splice(index_to_remove, 1);
         // restockdb.deleteGroupMember
         return true;
     }

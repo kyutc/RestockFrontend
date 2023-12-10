@@ -455,17 +455,23 @@ export default class ManageGroups extends HTMLElement {
             spinner: 'bubbles'
         }).then((loading) => {
             loading.present();
-            const transaction = Restock.joinGroupByInviteCode(invite_code);
-            transaction.then(transaction_was_successful => {
-                if (!transaction_was_successful) {
+            const transaction = Restock.getGroupByInviteCode(invite_code).then( group => {
+                if (!group) {
                     raiseToast('Something went wrong. Please try again later.', 'danger');
                     return;
                 }
-                raiseToast(`You have joined ${this.#groups[this.#groups.length-1].name}`); // New groups are pushed
-                // Pulls all changes
-                if (this.#fetchDetails()) {
-                    this.renderGroups();
-                }
+                Restock.joinGroupByInviteCode(invite_code).then( group_joined_successfully => {
+                    if (!group_joined_successfully) {
+                        raiseToast('Something went wrong. Please try again later.', 'danger');
+                        return;
+                    }
+                    Restock.setCurrentGroup(group.id);
+                    raiseToast(`You have joined ${group.name}`); // New groups are pushed
+                    // Pulls all changes
+                    if (this.#fetchDetails()) {
+                        this.renderGroups();
+                    }
+                })
             }).then(() => {
                 loading.dismiss();
             });
