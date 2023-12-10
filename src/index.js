@@ -33,8 +33,10 @@ class AppRoot extends HTMLElement {
                 this.render();
                 this.updateRoutes();
                 router.addEventListener('ionRouteWillChange', (e) => {
-                    console.log('ROUTE DID CHANGE')
                     this.updateRoutes();
+                })
+                document.querySelector('#home').addEventListener('click', (e) => {
+                    navigateTo(e.target.href);
                 })
                 loading.dismiss();
             });
@@ -60,7 +62,7 @@ class AppRoot extends HTMLElement {
                         </ion-toolbar>
                         <ion-content class="ion-padding">
                             <ion-list>
-                                <ion-item button href="/">Home</ion-item>
+                                <ion-item button href="/" id="home">Home</ion-item>
                                 <ion-item button href="/settings">Settings</ion-item>
                             </ion-list>
                         </ion-content>
@@ -80,7 +82,7 @@ class AppRoot extends HTMLElement {
      * If the user is logged in and attempts to load the login page, they'll be redirected to the 'home' page.
      * @return {string}
      */
-    updateRoutes() { console.log('fire!~')
+    updateRoutes() {
         const active_session = Restock.hasActiveSession();
         const group_id = Restock.getCurrentGroup()?.id;
         let default_page = {

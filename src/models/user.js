@@ -10,6 +10,13 @@ export default class {
         this.#name = obj['name'];
     }
 
+    toJSON() {
+        return JSON.stringify({
+            id: this.id,
+            name: this.name
+        });
+    }
+
     get ['id']() {
         return this.#id;
     }

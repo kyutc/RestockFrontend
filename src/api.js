@@ -130,16 +130,14 @@ export default class Api {
      * Update details of a user account.
      * 
      * @param {number} userId
-     * @param {object} userDetails
+     * @param {User} user
      * @returns {Promise<Response>}
      */
-    static async updateUserAccount(userId, userDetails) {
-        const userObj =
-            {
-                "new_username": userDetails.new_username,
-                "new_password": userDetails.new_password,
-            };
-        const url = this._base_url + "user/" + userId;
+    static async updateUserAccount(token, user) {
+        const url = this._base_url + "user/" + user.id;
+        const userObj = {
+            new_username: user.name
+        }
         const options = {
             method: "PUT",
             body: JSON.stringify(userObj),

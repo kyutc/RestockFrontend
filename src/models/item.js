@@ -45,6 +45,7 @@ export default class {
         this.#auto_add_to_shopping_list = updated_item.auto_add_to_shopping_list;
         this.#shopping_list_quantity = updated_item.shopping_list_quantity;
         this.#add_to_pantry_on_purchase = updated_item.add_to_pantry_on_purchase;
+        this.calculateShoppingListFromMinimumThreshold();
     }
 
     toJSON() {

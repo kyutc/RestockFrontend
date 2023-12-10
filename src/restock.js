@@ -233,19 +233,23 @@ export default class Restock {
         return true;
     }
 
-    // static async updateUser(obj) {
-    //     const response = await Api.updateUserAccount(this.#session, obj);
-    //     if (!response.ok) {
-    //         const body = await response.text();
-    //         console.log("DEBUG: Restock.updateUser -- Failed to update user", body);
-    //         return false;
-    //     }
-    //     console.log("DEBUG: Restock.updateUser -- Successfully updated user");
-    //     const data = await response.json();
-    //     this.#user = new User(data);
-    //     // restockdb.deleteGroup
-    //     return true;
-    // }
+    static async updateUser(user) {
+        const response = await Api.updateUserAccount(this.#session, user);
+        if (!response.ok) {
+            const body = await response.text();
+            console.log("DEBUG: Restock.updateUser -- Failed to update user", body);
+            return false;
+        }
+        console.log("DEBUG: Restock.updateUser -- Successfully updated user");
+        const data = await response.json();
+        console.log(user);
+        console.log(data);
+        this.#user = new User(data);
+        // Update group member entries
+        this.#group_members.flat().forEach( gm => gm.name = gm.user_id == this.#user.id ? this.#user.name : gm.name );
+        // restockdb.deleteGroup
+        return true;
+    }
 
     static async deleteUser(id) {
         const response = await Api.deleteUserAccount(this.#session, id);

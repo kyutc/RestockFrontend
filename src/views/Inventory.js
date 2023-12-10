@@ -531,7 +531,7 @@ export default class Inventory extends HTMLElement {
                 clearTimeout(this.#sync_timer);
                 this.#sync_timer = null;
             }
-
+            this.renderGroupHistory();
         }, this.#sync_interval);
     }
 }

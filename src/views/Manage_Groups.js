@@ -386,6 +386,7 @@ export default class ManageGroups extends HTMLElement {
                 }
                 group_was_created = true;
                 raiseToast(`Group ${name} was created`);
+                Restock.setCurrentGroup();
                 // Pulls all changes
                 if (this.#fetchDetails()) {
                     this.renderGroups();

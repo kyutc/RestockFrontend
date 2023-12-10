@@ -84,21 +84,14 @@ export default class SettingsPage extends HTMLElement {
     }
 
     async renameUser(userId, newName) {
-        try {
-            // Update the group name through the API
-            const response = await Api.updateUserAccount(userId, { new_username: newName, new_password: ''});
-            const responseData = await response.json();
-            console.log(responseData);
-
-            if (response.ok) {
-                await this.Toast("User renamed successfully");
-            } else {
-                await this.errorToast(`Unable to rename user`);
-            }
-            return responseData;
-        } catch (error) {
-            console.error('Unable to rename user: ', error);
+        let current_user = Restock.getCurrentUser();
+        current_user.name = newName;
+        const user_was_updated = Restock.updateUser(current_user);
+        if (!user_was_updated) {
+            raiseToast('Something went wrong. Try again later.', 'danger');
+            return
         }
+        raiseToast('Username successfully changed to ' + current_user.name);
     }
 
     async attachEventListeners() {
