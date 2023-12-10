@@ -66,6 +66,17 @@ export default class Restock {
      */
     static getGroupById(group_id) { return this.#groups.find( g => g.id == group_id ) ?? null; }
 
+    static getCurrentUser() { return this.#user; }
+
+    static getCurrentUserGroupMemberForGroup(group) {
+        const gm =  this.#group_members.flat().find( gm => gm.group_id == group.id && gm.user_id == this.#user.id );
+        return gm;
+    }
+
+    static getGroupMemberById(group_member_id) {
+        return this.#group_members.flat().find( group_member => group_member.id == group_member_id);
+    }
+
     /**
      * Returns the last group selected by this user or null if none found.
      * @return {Group|null}
@@ -233,8 +244,7 @@ export default class Restock {
         const data = await response.json();
         const new_group = new Group(data);
         this.#groups.push(new_group);
-        this.#action_logs[new_group.id] = [];
-        await this.#populateGroupHistory(new_group.id);
+        await this.#populateDetailsForGroupById(new_group.id);
         return true;
     }
 
@@ -267,6 +277,7 @@ export default class Restock {
         const index_to_remove = this.#groups.findIndex( group => group.id == id);
         const removed_group = this.#groups.splice(index_to_remove, 1);
         // restockdb.deleteGroup
+        return true;
     }
 
     /**
@@ -282,7 +293,7 @@ export default class Restock {
             return false;
         }
         console.log("DEBUG: Restock.updateGroupMember -- Successfully updated member's role");
-        await this.#populateGroupHistory(group_member.group_id);
+        await this.#populateDetailsForGroupById(group_member.group_id);
         const data = await response.json();
         group_member.role = data.role;
         // group_memer.save()
@@ -302,7 +313,15 @@ export default class Restock {
             return false;
         }
         console.log("DEBUG: Restock.deleteGroupMember -- Successfully deleted group member");
-        await this.#populateGroupHistory(group_member.group_id);
+        if (group_member.user_id == this.#user.id) {
+            const index_to_remove = this.#groups.indexOf(this.getGroupById(group_member.group_id));
+            const removed_group = this.#groups.splice(index_to_remove, 1)[0];
+            this.#group_members.splice(removed_group.id, 1);
+            this.#invites.splice((removed_group.id));
+            this.#items.splice(removed_group.id);
+            this.#action_logs.splice(removed_group.id);
+        }
+        await this.#populateDetailsForGroupById(group_member.group_id)
         const index_to_remove = this.#group_members[group_member.group_id].findIndex( old_group_member => old_group_member.id == group_member.id);
         const removed_item = this.#group_members[group_member.group_id].splice(index_to_remove, 1);
         // restockdb.deleteGroupMember
@@ -335,7 +354,7 @@ export default class Restock {
     /**
      * Generate a new invitation
      * @param group_id
-     * @return {Promise<boolean>}
+     * @return {Promise<Invite|false>}
      */
     static async createGroupInvite(group_id) {
         const response = await Api.createGroupInvite(this.#session, group_id);
@@ -349,7 +368,7 @@ export default class Restock {
         const new_invite = new Invite(data);
         // new_invite.save()
         this.#invites[new_invite.group_id].push(new_invite);
-        return true;
+        return new_invite;
     }
 
     /**
@@ -404,7 +423,7 @@ export default class Restock {
         console.log("DEBUG: Restock.acceptGroupByInviteCode -- Successfully joined group");
         const data = await response.json();
         const group_member = new GroupMember(data);
-        this.#populateDetailsForGroupById(group_member.group_id);
+        await this.#populateDetailsForGroupById(group_member.group_id);
         return true;
     }
 
@@ -505,9 +524,14 @@ export default class Restock {
             return false;
         }
         console.log(`DEBUG: Restock.getGroupDetails -- Successfully retrieved details for ${group_id}`);
+
+        if (!this.#groups.find( group => group.id == group_id)) {
+
+        }
         // User is a part of this group
         // Ensuring each array is instantiated so values can be read by reference immediately
         this.#group_members[group_id] = this.#group_members[group_id] ?? [];
+        this.#invites[group_id] = this.#invites[group_id] ?? [];
         this.#items[group_id] = this.#items[group_id] ?? [];
         this.#action_logs[group_id] = this.#action_logs[group_id] ?? [];
         

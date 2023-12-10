@@ -294,10 +294,11 @@ export default class Api {
     /**
      * Add a new member to a specific group.
      * @param token
+     * @param {string} groupId
      * @param {GroupMember} group_member
      * @returns {Promise<Response>}
      */
-    static async addGroupMember(groupId, group_member) {
+    static async addGroupMember(token, groupId, group_member) {
         const url = this._base_url + `group/${group_member.group_id}/member`;
         const formData = new FormData();
         formData.append('user_id', group_member.user_id);
@@ -320,6 +321,7 @@ export default class Api {
      * @returns {Promise<Response>}
      */
     static async updateGroupMember(token, group_member) {
+        console.log(group_member.toJSON())
         const url = this._base_url + `group/${group_member.group_id}/member/${group_member.id}`;
         const options = {
             method: "PUT",

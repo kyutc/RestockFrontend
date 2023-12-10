@@ -1,233 +1,494 @@
+import AddGroupModal from "./components/manage_groups/add_group_modal.js";
+import Group from "../models/group.js";
+import GroupOptionsMenu from "./components/manage_groups/group_options_menu.js";
 import Restock from "../restock.js";
+import {loadingController, modalController, popoverController} from "@ionic/core";
+import {raiseToast} from "../utility.js";
+import Invite from "../models/invite.js";
+import Item from "../models/item.js";
+import createRenameGroupModal from "./components/manage_groups/create_group_modal.js";
+import createGroupAccordion from "./components/manage_groups/create_group_accordion.js";
+import createGroupMemberItem from "./components/manage_groups/create_group_member_item.js";
+import createInviteCodeModal from "./components/manage_groups/create_invite_modal.js";
 
 export default class ManageGroups extends HTMLElement {
-
     /** @type {Array<Group>} */
     #groups;
 
-    /** @type {Group} */
-    #selected_group = null; // Track the currently selected group
-
     connectedCallback() {
-        this.#groups = Restock.getGroups();
-        console.log("DEBUG: Loading Manage Groups")
-        this.#selected_group = Restock.getCurrentGroup();
-
+        console.log("DEBUG: Loading Manage Groups page")
+        this.#fetchDetails();
         this.render();
-        this.attachEventListeners();
     }
 
-    async Toast(message, color = 'success') {
-        const toast = document.createElement('ion-toast');
-        toast.message = message;
-        toast.duration = 2000;
-        toast.color = color;
-        document.body.appendChild(toast);
-        return toast.present();
-    }
-    async errorToast(message) {
-        return this.Toast(message, 'danger');
+    #fetchDetails() {
+        this.#groups = Restock.getGroups();
+        return !!this.#groups;
     }
 
     render() {
         this.innerHTML = `
-            <ion-header>
-                <ion-toolbar>
-                    <ion-title>Manage Groups</ion-title>
-                </ion-toolbar>
-            </ion-header>
             <ion-content>
-                <ion-card>
-                    <ion-button size="small" type="submit" id="create-group">Create Group</ion-button>
-                    <!-- Form to create a new group -->
-                    <ion-grid id="group-creation" style="display: none">
-                        <ion-row>
-                            <ion-col><ion-input label="Enter Group Name" label-placement="floating" fill="solid" id="group-name" required></ion-input></ion-col>
-                            <ion-col><ion-button shape="square" size="medium" type="submit" clear id="submit-group">Submit</ion-button></ion-col>
-                        </ion-row>
-                    </ion-grid>
-                </ion-card>
-                <ion-card>
-                    ${this.renderGroups()}
-                </ion-card>
+                <ion-grid>
+                    <ion-row>
+                        <ion-header>
+                            <ion-toolbar>
+                                <ion-title>Manage Groups</ion-title>
+                            </ion-toolbar>
+                        </ion-header>
+                    </ion-row>
+                    
+                    <ion-row>
+                        <ion-button type="submit" id="add-group-button">Add Group<ion-icon slot="end" name="add"></ion-icon></ion-button>
+                    </ion-row>
+                    
+                    <ion-row>
+                        <ion-accordion-group style="width:100%" id="group-list"></ion-accordion-group>
+                    </ion-row>
+                        <!-- Form to create a new group -->
+<!--                        <ion-input label="Enter Group Name" label-placement="floating" fill="solid" id="group-name" required></ion-input>-->
+<!--                        <ion-button shape="square" size="medium" type="submit" clear id="submit-group">Submit</ion-button>-->
+                </ion-grid>
             </ion-content>
         `;
+        this.#attachAddGroupListener();
+        this.renderGroups();
+    }
+
+    #attachAddGroupListener() {
+        const add_group_button = document.querySelector('#add-group-button');
+        add_group_button.addEventListener('click',  async(e) => {
+            this.#displayAddGroupModal();
+        })
     }
 
     renderGroups() {
-        const groups = Restock.getGroups();
-        return '<ion-accordion-group>'
-            + groups.map((group) => `
-                <ion-accordion value="${group.id}" data-group-id="${group.id}" id="group${group.id}">
-                    <ion-item slot="header" color="light">
-                        <ion-label>${group.name}</ion-label>
-                        <ion-button size="small" class="rename-group" data-group-id="${group.id}">Rename</ion-button>
-                        <ion-button size="small" color="danger" class="delete-group" data-group-id="${group.id}">Delete</ion-button>
-                    </ion-item>
-                    <div class="ion-padding" slot="content" id="content-${group.id}">${group.id} Content</div>
-                </ion-accordion>
-    `).join('') + '</ion-accordion-group>';
+        const group_list = document.querySelector('#group-list');
+        group_list.innerHTML = this.#groups.reduce((html, group) => html + createGroupAccordion(group), '');
+        this.#attachModifyGroupListeners()
+        this.renderGroupMembers();
     }
 
-    //
-    async createGroup() {
-        const groupNameInput = document.getElementById('group-name');
-        const groupName = groupNameInput.value;
+    #attachModifyGroupListeners() {
+        const group_options = document.querySelectorAll('.group-options');
+        group_options.forEach( go => {
+            go.addEventListener('click' , (e) => {
+                e.stopPropagation();
+                const group = this.#getGroupReferencedByEvent(e);
+                const popover = this.#presentGroupOptionsPopover(e).then( popover => {
+                    document.querySelector('#create-invite-button').addEventListener('click', () => {
+                        // TODO
+                        Restock.createGroupInvite(group.id).then( invite => this.#displayInviteCodeModal(invite));
+                        popover.dismiss();
+                    });
+                    document.querySelector('#rename-group-button').addEventListener('click', () => {
+                        // display edit item form modal
+                        this.#displayRenameGroupModal(group);
+                        popover.dismiss();
+                    });
+                    document.querySelector('#leave-group-button').addEventListener('click', () => {
+                        this.#leaveGroup(group);
+                        popover.dismiss();
+                    });
+                });
+            });
+        });
+    }
 
-        const group_was_created = await Restock.createGroup(groupName);
-        if (group_was_created) {
-            await this.Toast("Group created successfully");
-        } else {
-            await this.errorToast('Unable to create group');
-            console.error('Unable to create group: ', error);
+    renderGroupMembers() {
+        this.#groups.forEach( group => {
+            const current_user_group_member = Restock.getCurrentUserGroupMemberForGroup(group);
+            if (!current_user_group_member) return;
+            const group_member_list = document.querySelector(`#group-member-list-for-${group.id}`);
+            const group_members = Restock.getGroupMembersForGroupById(group.id);
+            if (!group_members) return;
+            group_member_list.innerHTML = group_members.reduce((html, group_member) => {
+                return html + createGroupMemberItem(group_member, current_user_group_member);
+            }, '');
+        });
+        this.#attachModifyGroupMembersListeners();
+    }
+
+    #attachModifyGroupMembersListeners() {
+        const set_as_owner_buttons = document.querySelectorAll('.set-as-owner-button');
+        const remove_from_group_buttons = document.querySelectorAll('.remove-from-group-buttons');
+
+        set_as_owner_buttons.forEach(saob => {
+            saob.addEventListener('click', (e) => {
+                console.log('ife')
+                const group_member = this.#getGroupMemberReferencedByEvent(e);
+                this.#setAsOwner(group_member);
+            });
+        });
+        remove_from_group_buttons.forEach( rfgb => {
+            rfgb.addEventListener('click', (e) => {
+                const group_member = this.#getGroupMemberReferencedByEvent(e);
+                this.#removeGroupMember(group_member);
+            });
+        });
+    }
+
+    /**
+     * @param {Event} e
+     */
+    #getGroupReferencedByEvent(e) {
+        const element_id = e.currentTarget.parentNode.id; // Should be an <ion-item> element
+        const group_id = element_id.substr(element_id.indexOf('g-')+2);
+        const group = this.#groups.find(g => g.id == group_id);
+        if (!group) return null;
+        return group;
+    }
+
+    #getGroupMemberReferencedByEvent(e) {
+        const element_id = e.currentTarget.parentNode.id;
+        console.log(element_id)
+        const group_member_id = element_id.substr(element_id.indexOf('gm-')+3);
+        console.log(element_id, group_member_id)
+        const group_member = Restock.getGroupMemberById(group_member_id);
+        if (!group_member) return null;
+        return group_member;
+    }
+
+    /** Dunno why, this method is firing twice after a group is created. */
+    #add_group_modal_is_open = false;
+
+    async #displayAddGroupModal() {
+        if(this.#add_group_modal_is_open) return;
+        this.#add_group_modal_is_open = true;
+
+        const modal = await modalController.create({
+            backdropDismiss: false,
+            component: 'add-group-modal'
+        });
+
+        const dismissModal = (role) => {
+            modalController.dismiss(null, role);
+            this.#add_group_modal_is_open = false;
         }
 
-    }
+        modal.present().then(() => {
+            document.querySelector('#close-add-group-modal').addEventListener('click', () => {
+                dismissModal('close')
+            });
 
-    //
-    async getGroupDetails(groupId) { // TODO
-        try {
-            const response = await Api.getGroupDetails(groupId);
-            return response;
-        } catch (error) {
-            console.error('Unable to access group details: ', error);
-        }
-    }
+            const add_group_segment = document.querySelector('#add-group-segment');
+            const create_group_row = document.querySelector('#create-group-row');
+            const group_name_input = document.querySelector('#group-name-input');
+            const create_group_button = document.querySelector('#create-group-button');
 
-    //
-    // // TODO: Have method display user's name rather than their id.
-    // // TODO: Add delete button to remove users from groups.
-    // renderGroupDetails(details) {
-    //     // Implement rendering logic for group details here
-    //     try {
-    //         return `<ion-list>` + details.group_members.map((member) => `<ion-item>
-    //             <ion-label>
-    //                 id: <ion-badge color="warning">${member.user_id}</ion-badge>
-    //                 <span style="font-variant: small-caps; font-weight: bold">(${member.role.charAt(0).toUpperCase()}${member.role.slice(1)})</span>
-    //             </ion-label>
-    //        </ion-item>`).join('\n') + `</ion-list>`;
-    //     } catch(ex) {
-    //         console.log(ex);
-    //         return '';
-    //     }
-    // }
-    //
-    async renameGroup(groupId, newName) {
-        const group_was_updated = await Restock.updateGroup(groupId, newName);
-        if (group_was_updated) {
-            await this.Toast("Group renamed successfully");
-        } else {
-            await this.errorToast("Unable to rename group");
-        }
-    }
+            const join_group_row = document.querySelector('#join-group-row');
+            const invite_code_input = document.querySelector('#invite-code-input');
+            const join_group_button = document.querySelector('#join-group-button');
 
-    async deleteGroup(groupId) {
-        const group_was_deleted = await Restock.deleteGroup(groupId);
 
-        try {
-            // Delete the group through the API
-            const response = await Api.deleteGroup(groupId);
-            const responseData = await response.json();
+            add_group_segment.addEventListener('ionChange', (e) => {
+                const segment = e.detail.value;
+                switch (segment) {
+                    case "join":
+                        join_group_row.classList.remove('hidden');
+                        create_group_row.classList.add('hidden');
+                        break;
+                    case "create":
+                    default:
+                        create_group_row.classList.remove('hidden');
+                        join_group_row.classList.add('hidden');
+                }
+            });
 
-            if (responseData.result === 'success') {
-                // Remove the group and all members from the DB
-                await restockdb.deleteGroup(groupId);
+            group_name_input.addEventListener('ionInput', () => {
+                const input = group_name_input.value; // get name
+                if (input === '') { // Name is empty
+                    create_group_button.disabled = true;
+                    return;
+                }
+                const group_already_exists = !!this.#groups.find(group => group.name === input);
+                create_group_button.disabled = group_already_exists; // Don't create duplicate group
+            });
+            create_group_button.addEventListener('click', () => {
+                this.#createGroup(group_name_input.value);
+                dismissModal('create');
+            });
+
+            const joinGroupGuard = () => {
+                const code = invite_code_input.value;
+                if (code.length != 24) { // Invalid code
+                    console.log('not rite', code.length)
+                    join_group_button.disabled = true;
+                    join_group_button.fill = "outline";
+                    return
+                }
+
+                Restock.getGroupByInviteCode(code).then( group => {
+                    if (group && !this.#groups.find( g => g.id == group.id)) {
+                        invite_code_input.classList.remove('danger-border');
+                        invite_code_input.classList.add('success-border');
+                        join_group_button.disabled = false;
+                        join_group_button.fill = "solid";
+                    } else {
+                        invite_code_input.classList.remove('success-border');
+                        invite_code_input.classList.add('danger-border');
+                        join_group_button.disabled = true;
+                        join_group_button.fill = "outline";
+                    }
+                });
             }
 
-            await this.Toast("Group deleted successfully");
-            return response;
-        } catch (error) {
-            await this.errorToast('Unable to delete group');
-            console.error('Unable to delete group: ', error);
-        }
-    }
+            invite_code_input.addEventListener('ionInput', () => {
+                joinGroupGuard();
+            });
+            invite_code_input.addEventListener('paste', () => {
+                joinGroupGuard();
+            });
 
-    async refreshView() {
-        // Fetch and render the updated list of groups
-        // const groups = this.#groups;
-        // const groupsHtml = this.renderGroups(groups);
-        //
-        // // Update the groups list container
-        // const groupsListContainer = document.getElementById('groups-list');
-        // groupsListContainer.innerHTML = groupsHtml;
-        this.render();
-        // Reattach event listeners for the updated elements
-        await this.#attachModifyGroupEventListeners();
-    }
-
-    async attachEventListeners() {
-        this.#attachCreateGroupEventListeners();
-        this.#attachModifyGroupEventListeners()
-    }
-
-    #attachCreateGroupEventListeners() {
-        document.getElementById('create-group').addEventListener('click', () => {
-            const formContainer = document.getElementById('group-creation');
-            document.getElementById('create-group').style.display = 'none';
-            formContainer.style.display = formContainer.style.display === 'none' ? 'block' : 'none';
-        });
-
-        // Handle form submission
-        document.getElementById('submit-group').addEventListener('click', async (e) => {
-            e.preventDefault();
-            const response = await this.createGroup();
-            await this.refreshView();
-            document.getElementById('create-group').style.display = 'inline-block';
-            document.getElementById('group-creation').style.display = 'none';
-            return response;
+            join_group_button.addEventListener('click', () => {
+                this.#joinGroup(invite_code_input.value);
+                dismissModal('join')
+            });
         });
     }
 
-    #attachModifyGroupEventListeners() {
-        // Handle click on "Rename" Button
-        const renameButtons = document.querySelectorAll('.rename-group');
-        renameButtons.forEach(button => {
-            button.addEventListener('click', async (event) => {
-                event.stopPropagation();
-                const groupId = event.target.dataset.groupId;
-                const newName = prompt("Enter the new name for the group:");
-                if (!!newName) {
-                    await this.renameGroup(groupId, newName);
-                    // Refresh the view after renaming
-                    await this.refreshView();
+    /**
+     * Popup menu that shows up next to the item element's kebab button when it's pressed.
+     * @param {Event} e
+     * @return {Promise<HTMLIonPopoverElement>}
+     */
+    async #presentGroupOptionsPopover(e) {
+        //TODO:
+        // const group = this.#getGroupReferencedByEvent(e);
+        // const user_is_owner = Restock.getCurrentUserGroupMemberForGroup(group).role === 'owner';
+        // Delete if user is owner, leave otherwise
+        const popover = await popoverController.create({
+            component: 'group-options-menu',
+            event: e
+        });
+        await popover.present();
+        return popover;
+    }
+
+    /**
+     * @param {Invite} invite
+     */
+    async #displayInviteCodeModal(invite) {
+        if (!invite) return;
+        console.log(invite);
+
+        const div = document.createElement('div');
+        div.innerHTML = createInviteCodeModal(invite);
+
+        const modal = await modalController.create({
+            backdropDismiss: false,
+            component: div
+        });
+
+        modal.present().then(() => {
+            const new_invite_code_input = document.querySelector('#new-invite-code-input');
+            const copy_to_clipboard_button = document.querySelector('#copy-invite-code-to-clipboard-button');
+            document.querySelector('#close-invite-modal-button').addEventListener('click', () => {
+                modalController.dismiss(null, 'cancel');
+            });
+            copy_to_clipboard_button.addEventListener('click', () => {
+                new_invite_code_input.classList.add('success-border');
+                navigator.clipboard.writeText(new_invite_code_input.value);
+                raiseToast(`Copied ${new_invite_code_input.value} to clipboard`);
+            })
+        });
+    }
+
+    /**
+     * Display group modal overlay
+     * @param group
+     * @return {Promise<void>}
+     */
+    async #displayRenameGroupModal(group) {
+        group = group ??  new Group({id: 0, name: ''});
+
+        const div = document.createElement('div');
+        div.innerHTML = createRenameGroupModal(group);
+
+        const modal = await modalController.create({
+            backdropDismiss: false,
+            component: div
+        });
+
+        modal.present().then(() => {
+            const old_group_name = group.name ?? '';
+            const rename_group_input = document.querySelector('#group-name-input');
+            const rename_group_button = document.querySelector('#rename-group-button')
+            document.querySelector('#modal-close').addEventListener('click', () => {
+                modalController.dismiss(null, 'cancel');
+            });
+            rename_group_input.addEventListener('ionInput', () => {
+                const input = rename_group_input.value; // get name
+                if (input === '' || input === old_group_name) { // Name is empty
+                    rename_group_button.disabled = true;
+                    return;
                 }
+                const group_already_exists = !!this.#groups.find(group => group.name === input);
+                rename_group_button.disabled = group_already_exists; // Don't create duplicate group
             });
-        });
 
-        // Handle click on "Delete" button
-        const deleteButtons = document.querySelectorAll('.delete-group');
-        deleteButtons.forEach(button => {
-            button.addEventListener('click', async (event) => {
-                event.stopPropagation();
-                const groupId = event.target.dataset.groupId;
-                const confirmDelete = confirm("Are you sure you want to delete this group?");
-                if (confirmDelete) {
-                    await this.deleteGroup(groupId);
-                    // Refresh the view after deleting
-                    await this.refreshView();
+            document.querySelector('#rename-group-button').addEventListener('click', () => {
+                // todo: guard against bad input and incoplete fields
+                this.#renameGroup(group.id, rename_group_input.value);
+                modalController.dismiss(null, 'submit');
+            })
+        });
+    }
+
+    #createGroup(name) {
+        let group_was_created;
+        loadingController.create({
+            message: 'Creating group...',
+            spinner: 'bubbles'
+        }).then((loading) => {
+            loading.present();
+            const transaction = Restock.createGroup(name);
+            transaction.then(transaction_was_successful => {
+                if (!transaction_was_successful) {
+                    raiseToast('Something went wrong. Please try again later.', 'danger');
+                    group_was_created = false;
+                    return;
                 }
+                group_was_created = true;
+                raiseToast(`Group ${name} was created`);
+                // Pulls all changes
+                if (this.#fetchDetails()) {
+                    this.renderGroups();
+                }
+            }).then(() => {
+                loading.dismiss();
             });
         });
+        return group_was_created;
+    }
 
-        // Handle click on arrow to show/hide details
-        const groupList = document.querySelectorAll('ion-accordion');
-        groupList.forEach(groupTab => {
-            groupTab.addEventListener('click', async (event) => {
-                //console.log(arrow);
-                const groupId = groupTab.value;
-                //console.log('groupId: ' + groupId);
-                const groupDetailsContainer = document.getElementById(`content-${groupId}`);
-                //console.log(groupDetailsContainer);
-
-                // Fetch and display group details when expanding
-                const detailsResponse = await this.getGroupDetails(groupId);
-                const detailsJson = await detailsResponse.json();
-                console.log(detailsJson);
-                // Render and append group details to the container
-                groupDetailsContainer.innerHTML = this.renderGroupDetails(detailsJson);
+    #renameGroup(id, name) {
+        loadingController.create({
+            message: 'Renaming group...',
+            spinner: 'bubbles'
+        }).then((loading) => {
+            loading.present();
+            const transaction = Restock.updateGroup(id, name);
+            transaction.then(transaction_was_successful => {
+                if (!transaction_was_successful) {
+                    raiseToast('Something went wrong. Please try again later.', 'danger');
+                    return;
+                }
+                raiseToast(`Group renamed to ${name}`);
+                // Pulls all changes
+                if (this.#fetchDetails()) {
+                    this.renderGroups();
+                }
+            }).then(() => {
+                loading.dismiss();
             });
         });
+    }
 
+    #setAsOwner(group_member) {
+        const old_role = group_member.role;
+        group_member.role = 'owner';
+        loadingController.create({
+            message: 'Changing role...',
+            spinner: 'bubbles'
+        }).then((loading) => {
+            loading.present();
+            const transaction = Restock.updateGroupMember(group_member);
+            transaction.then(transaction_was_successful => {
+                if (!transaction_was_successful) {
+                    group_member.role = old_role; // Todo: Make a dedicated method in Restock for this logic
+                    raiseToast('Something went wrong. Try again later.', 'danger');
+                    return;
+                }
+                const group = Restock.getGroupById(group_member.group_id);
+                const current_user_group_member = Restock.getCurrentUserGroupMemberForGroup(group);
+                current_user_group_member.role = old_role;
+                raiseToast(`Set ${group_member.name} as the owner.`)
+                if (this.#fetchDetails()) {
+                    this.renderGroups();
+                }
+            }).then(() => {
+                loading.dismiss();
+            });
+        });
+    }
+
+    #joinGroup(invite_code) {
+        loadingController.create({
+            message: 'Joining group...',
+            spinner: 'bubbles'
+        }).then((loading) => {
+            loading.present();
+            const transaction = Restock.joinGroupByInviteCode(invite_code);
+            transaction.then(transaction_was_successful => {
+                if (!transaction_was_successful) {
+                    raiseToast('Something went wrong. Please try again later.', 'danger');
+                    return;
+                }
+                raiseToast(`You have joined ${this.#groups[this.#groups.length-1].name}`); // New groups are pushed
+                // Pulls all changes
+                if (this.#fetchDetails()) {
+                    this.renderGroups();
+                }
+            }).then(() => {
+                loading.dismiss();
+            });
+        });
+    }
+
+    #leaveGroup(group) {
+        const group_member = Restock.getCurrentUserGroupMemberForGroup(group);
+        const user_is_owner = group_member.role === 'owner';
+
+        loadingController.create({
+            message: user_is_owner ? 'Deleting group...' : 'Leaving group...',
+            spinner: 'bubbles'
+        }).then((loading) => {
+            loading.present();
+            const transaction = user_is_owner ?
+                Restock.deleteGroup(group.id) :
+                Restock.deleteGroupMember(group_member)
+            ;
+            transaction.then(transaction_was_successful => {
+                if (!transaction_was_successful) {
+                    raiseToast('Something went wrong. Please try again later.', 'danger');
+                    return;
+                }
+                // Todo: change message depending on if group was left or dleeted
+                raiseToast(`You have left ${group.name}`);
+                // Pulls all changes
+                if (this.#fetchDetails()) {
+                    this.renderGroups();
+                }
+            }).then(() => {
+                loading.dismiss();
+            });
+        });
+    }
+
+    #removeGroupMember(group_member) {
+        const group = Restock.getGroupById(group_member.group_id);
+        loadingController.create({
+            message: `Removing ${group_member.name} from group...`,
+            spinner: 'bubbles'
+        }).then((loading) => {
+            loading.present();
+            const transaction = Restock.deleteGroupMember(group_member);
+            transaction.then(transaction_was_successful => {
+                if (!transaction_was_successful) {
+                    raiseToast('Something went wrong. Please try again later.', 'danger');
+                    return;
+                }
+                // Todo: change message depending on if group was left or dleeted
+                raiseToast(`You have removed ${group_member.name} from ${group.name}`);
+                // Pulls all changes
+                if (this.#fetchDetails()) {
+                    this.renderGroups();
+                }
+            }).then(() => {
+                loading.dismiss();
+            });
+        });
     }
 }
 

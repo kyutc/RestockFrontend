@@ -6,6 +6,21 @@ ion-menu {
     min-height: 80%;
 }
 
+.success-border {
+    border: solid rgb(40, 186, 98);
+}
+
+.danger-border {
+    border: solid rgb(207, 60, 79);
+}
+
+.flex-box {
+    display: flex;
+    justify-content: center;
+    height: 100%;
+    width: 100%;
+}
+
 .hidden {
     /*
         Elements with this class will not be visible, but they will still take up space when rendered.
