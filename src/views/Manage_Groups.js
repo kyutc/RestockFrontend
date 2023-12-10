@@ -128,7 +128,7 @@ export default class ManageGroups extends HTMLElement {
 
     #attachModifyGroupMembersListeners() {
         const set_as_owner_buttons = document.querySelectorAll('.set-as-owner-button');
-        const remove_from_group_buttons = document.querySelectorAll('.remove-from-group-buttons');
+        const remove_from_group_buttons = document.querySelectorAll('.remove-from-group-button');
 
         set_as_owner_buttons.forEach(saob => {
             saob.addEventListener('click', (e) => {
@@ -139,6 +139,7 @@ export default class ManageGroups extends HTMLElement {
         });
         remove_from_group_buttons.forEach( rfgb => {
             rfgb.addEventListener('click', (e) => {
+                console.log('noo')
                 const group_member = this.#getGroupMemberReferencedByEvent(e);
                 const alert = document.createElement('ion-alert');
                 alert.header = "Warning";
