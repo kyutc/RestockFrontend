@@ -87,7 +87,24 @@ export default class ManageGroups extends HTMLElement {
                         popover.dismiss();
                     });
                     document.querySelector('#leave-group-button').addEventListener('click', () => {
-                        this.#leaveGroup(group);
+                        const alert = document.createElement('ion-alert');
+                        alert.header = "Warning";
+                        alert.message = `Are you sure you want to leave ${group.name}? This action cannot be undone.`;
+                        alert.buttons = [
+                            {
+                                text: 'Cancel',
+                                role: 'cancel',
+                            },
+                            {
+                                text: 'Leave',
+                                role: 'leave',
+                                handler: () => {
+                                    this.#leaveGroup(group);
+                                }
+                            }
+                        ];
+                        document.body.appendChild(alert);
+                        alert.present();
                         popover.dismiss();
                     });
                 });
@@ -123,7 +140,24 @@ export default class ManageGroups extends HTMLElement {
         remove_from_group_buttons.forEach( rfgb => {
             rfgb.addEventListener('click', (e) => {
                 const group_member = this.#getGroupMemberReferencedByEvent(e);
-                this.#removeGroupMember(group_member);
+                const alert = document.createElement('ion-alert');
+                alert.header = "Warning";
+                alert.message = `Are you sure you want to remove ${group_member.name} from your group? This action cannot be undone.`;
+                alert.buttons = [
+                    {
+                        text: 'Cancel',
+                        role: 'cancel',
+                    },
+                    {
+                        text: 'Remove',
+                        role: 'remove',
+                        handler: () => {
+                            this.#removeGroupMember(group_member)
+                        }
+                    }
+                ];
+                document.body.appendChild(alert);
+                alert.present();
             });
         });
     }
