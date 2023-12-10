@@ -148,7 +148,7 @@ export default class {
     subtractOneFromPantry() {
         if (!(this.pantry_quantity > 0)) return false; // Nothing changed
         this.pantry_quantity = this.pantry_quantity-1;
-        this.updateAmountInShoppingList();
+        if (this.isInPantryBelowMinimumThreshold()) this.addOneToShoppingList();
         return true;
     }
 
@@ -164,20 +164,34 @@ export default class {
      * @return {boolean} true if change took place
      */
     subtractOneFromShoppingList() {
-        const previous_shopping_list_quantity = this.shopping_list_quantity;
-        this.shopping_list_quantity = Math.max(0, this.shopping_list_quantity-1);
-        return this.shopping_list_quantity != previous_shopping_list_quantity;
+        if (!(this.shopping_list_quantity > 0)) return false;
+        this.shopping_list_quantity = this.shopping_list_quantity-1;
+        return true;
+    }
+
+    addOneFromShoppingList() {
+        if (!(this.shopping_list_quantity > 0)) return false;
+        this.shopping_list_quantity = this.shopping_list_quantity-1;
+        this.pantry_quantity = this.pantry_quantity+1;
+        return true;
+    }
+
+    addAllFromShoppingList() {
+        if (!(this.shopping_list_quantity > 0)) return false;
+        this.pantry_quantity = this.pantry_quantity + this.shopping_list_quantity;
+        this.shopping_list_quantity = 0;
+        return true;
     }
 
     /**
      * @return {boolean}
      */
-    updateAmountInShoppingList() {
+    calculateShoppingListFromMinimumThreshold() {
         if (!this.shouldBeAddedToShoppingList()) return false;
         const difference_to_add_to_shopping_list = this.minimum_threshold - this.pantry_quantity;
-        const prev_shopping_list_quantity = this.shopping_list_quantity;
-        this.shopping_list_quantity = Math.max(difference_to_add_to_shopping_list, this.shopping_list_quantity);
-        return this.shopping_list_quantity !== prev_shopping_list_quantity;
+        if (difference_to_add_to_shopping_list < this.shopping_list_quantity) return false;
+        this.shopping_list_quantity = difference_to_add_to_shopping_list;
+        return true;
     }
 
     /**

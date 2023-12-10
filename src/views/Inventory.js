@@ -27,6 +27,14 @@ export default class Inventory extends HTMLElement {
     /** @type {Array<ActionLog>} */
     #action_logs;
 
+    /** @type {Array<Item>} */
+    #recently_modified = [];
+
+    /** @type {number} milliseconds*/
+    #sync_interval = 3000;
+
+    #sync_timer;
+
     connectedCallback() {
         console.log("DEBUG: pantry.js -- Initializing pantry page")
         loadingController.create({
@@ -186,6 +194,8 @@ export default class Inventory extends HTMLElement {
         const subtract_pantry_buttons = document.querySelectorAll('.subtract-pantry');
         const add_shopping_list_buttons = document.querySelectorAll('.add-shopping-list');
         const subtract_shopping_list_buttons = document.querySelectorAll('.subtract-shopping-list');
+        const add_one_from_shopping_list_to_pantry_buttons = document.querySelectorAll('.add-one-from-shopping-list-to-pantry')
+        const add_all_from_shopping_list_to_pantry_buttons = document.querySelectorAll('.add-all-from-shopping-list-to-pantry')
         const pantry_options = document.querySelectorAll('.pantry-options');
         const shopping_list_options = document.querySelectorAll('.shopping-list-options');
         // Todo: shopping-list option add-all-to-pantry
@@ -193,6 +203,8 @@ export default class Inventory extends HTMLElement {
         subtract_pantry_buttons.forEach(spb => spb.addEventListener('click', this.#subtractOneFromPantry));
         add_shopping_list_buttons.forEach(aslb => aslb.addEventListener('click', this.#addOneToShoppingList));
         subtract_shopping_list_buttons.forEach(sslb => sslb.addEventListener('click', this.#subtractOneFromShoppingList));
+        add_one_from_shopping_list_to_pantry_buttons.forEach(aotpfslb => aotpfslb.addEventListener('click', this.#addOneFromShoppingListToPantry));
+        add_all_from_shopping_list_to_pantry_buttons.forEach(aafsltpb => aafsltpb.addEventListener('click', this.#addAllFromShoppingListToPantry));
 
         pantry_options.forEach( po => {
             po.addEventListener('click' , (e) => {
@@ -206,29 +218,60 @@ export default class Inventory extends HTMLElement {
                     document.querySelector('#delete-item-button').addEventListener('click', () => {
                         // ask "are u sure"
                         // delete item
-                        loadingController.create({
-                            message: 'Deleting item...',
-                            spinner: 'bubbles'
-                        }).then((loading) => {
-                            loading.present();
-                            const transaction = Restock.deleteItem(item);
-                            transaction.then(transaction_was_successful => {
-                                if (!transaction_was_successful) {
-                                    raiseToast('Something went wrong. Please try again later.', 'danger');
-                                    return;
+                        const alert = document.createElement('ion-alert');
+                        alert.header = "Warning";
+                        alert.message = `Are you sure you want to delete ${item.name} from your group? This action cannot be undone.`;
+                        alert.buttons = [
+                            {
+                                text: 'Cancel',
+                                role: 'cancel',
+                            },
+                            {
+                                text: 'Delete',
+                                role: 'delete',
+                                handler: () => {
+                                    this.#deleteItem(item)
                                 }
-                                popover.dismiss();
-                                raiseToast(`${item.name} was successfully deleted`);
-                                // Pulls all changes
-                                if (this.#fetchDetails()) {
-                                    this.renderGroupSelectors();
-                                    this.renderContent();
-                                    this.#attachItemListeners();
+                            }
+                        ];
+                        document.body.appendChild(alert);
+                        alert.present();
+                        popover.dismiss();
+                    });
+                });
+            });
+        });
+        shopping_list_options.forEach( slo => {
+            slo.addEventListener('click' , (e) => {
+                const item = this.#getItemReferencedByEvent(e);
+                const popover = this.#presentItemOptionsPopover(e).then( popover => {
+                    document.querySelector('#edit-item-button').addEventListener('click', () => {
+                        // display edit item form modal
+                        this.#displayItemModal(item);
+                        popover.dismiss();
+                    });
+                    document.querySelector('#delete-item-button').addEventListener('click', () => {
+                        // ask "are u sure"
+                        // delete item
+                        const alert = document.createElement('ion-alert');
+                        alert.header = "Warning";
+                        alert.message = `Are you sure you want to delete ${item.name} from your group? This action cannot be undone.`;
+                        alert.buttons = [
+                            {
+                                text: 'Cancel',
+                                role: 'cancel',
+                            },
+                            {
+                                text: 'Delete',
+                                role: 'delete',
+                                handler: () => {
+                                    this.#deleteItem(item)
                                 }
-                            }).then(() => {
-                                loading.dismiss();
-                            });
-                        });
+                            }
+                        ];
+                        document.body.appendChild(alert);
+                        alert.present();
+                        popover.dismiss();
                     });
                 });
             });
@@ -275,7 +318,7 @@ export default class Inventory extends HTMLElement {
             const chip = pantry_item.querySelector('ion-chip');
             if (item.isInPantryAtMinimumThreshold()) chip.color = "warning";
             else if (item.isInPantryBelowMinimumThreshold()) chip.color = "danger";
-            else chip.color = "default";
+            else chip.color = "success";
             chip.innerHTML = item.pantry_quantity;
         }
         if (shopping_list_item) {
@@ -301,22 +344,81 @@ export default class Inventory extends HTMLElement {
     #addOneToPantry = (e) => {
         const item = this.#getItemReferencedByEvent(e);
         if (!item) return;
-        if (item.addOneToPantry()) this.#updateDisplayedItemQuantities(item);
+        if (item.addOneToPantry()) {
+            this.#updateDisplayedItemQuantities(item);
+            if (!this.#recently_modified.find(i => i.id == item.id)) this.#recently_modified.push(item);
+            this.#timedUpdate();
+        }
     }
     #subtractOneFromPantry = (e) => {
         const item = this.#getItemReferencedByEvent(e);
         if (!item) return;
-        if (item.subtractOneFromPantry()) this.#updateDisplayedItemQuantities(item);
+        if (item.subtractOneFromPantry()) {
+            this.#updateDisplayedItemQuantities(item);
+            if (!this.#recently_modified.find(i => i.id == item.id)) this.#recently_modified.push(item);
+            this.#timedUpdate();
+        }
     }
     #addOneToShoppingList = (e) => {
         const item = this.#getItemReferencedByEvent(e);
         if (!item) return;
-        if (item.addOneToShoppingList()) this.#updateDisplayedItemQuantities(item);
+        if (item.addOneToShoppingList()) {
+            this.#updateDisplayedItemQuantities(item);
+            if (!this.#recently_modified.find(i => i.id == item.id)) this.#recently_modified.push(item);
+            this.#timedUpdate();
+        }
     }
     #subtractOneFromShoppingList = (e) => {
         const item = this.#getItemReferencedByEvent(e);
         if (!item) return;
-        if (item.subtractOneFromShoppingList()) this.#updateDisplayedItemQuantities(item);
+        if (item.subtractOneFromShoppingList()) {
+            this.#updateDisplayedItemQuantities(item);
+            if (!this.#recently_modified.find(i => i.id == item.id)) this.#recently_modified.push(item);
+            this.#timedUpdate();
+        }
+    }
+    #addOneFromShoppingListToPantry = (e) => {
+        const item = this.#getItemReferencedByEvent(e);
+        if (!item) return;
+        if (item.addOneFromShoppingList()) {
+            this.#updateDisplayedItemQuantities(item);
+            if (!this.#recently_modified.find(i => i.id == item.id)) this.#recently_modified.push(item);
+            this.#timedUpdate();
+        }
+    }
+    #addAllFromShoppingListToPantry = (e) => {
+        const item = this.#getItemReferencedByEvent(e);
+        if (!item) return;
+        if (item.addAllFromShoppingList()) {
+            this.#updateDisplayedItemQuantities(item);
+            if (!this.#recently_modified.find(i => i.id == item.id)) this.#recently_modified.push(item);
+            this.#timedUpdate();
+        }
+    }
+
+    #deleteItem(item) {
+        loadingController.create({
+            message: 'Deleting item...',
+            spinner: 'bubbles'
+        }).then((loading) => {
+            loading.present();
+            const transaction = Restock.deleteItem(item);
+            transaction.then(transaction_was_successful => {
+                if (!transaction_was_successful) {
+                    raiseToast('Something went wrong. Please try again later.', 'danger');
+                    return;
+                }
+                raiseToast(`${item.name} was successfully deleted`);
+                // Pulls all changes
+                if (this.#fetchDetails()) {
+                    this.renderGroupSelectors();
+                    this.renderContent();
+                    this.#attachItemListeners();
+                }
+            }).then(() => {
+                loading.dismiss();
+            });
+        });
     }
 
     /**
@@ -352,7 +454,7 @@ export default class Inventory extends HTMLElement {
             // const category_input = document.querySelector('#create-item-category');
             const pantry_quantity_input = document.querySelector('#create-item-pantry-quantity');
             const minimum_threshold_input = document.querySelector('#create-item-minimum-threshold');
-            const auto_add_top_shopping_list_input = document.querySelector('#create-item-auto-add-to-shopping-list');
+            const auto_add_to_shopping_list_input = document.querySelector('#create-item-auto-add-to-shopping-list');
             const shopping_list_quantity_input = document.querySelector('#create-item-shopping-list-quantity');
             const add_to_pantry_on_purchase = document.querySelector('#create-item-add-to-pantry-on-purchase');
             const captureModalInputToItem = () => {
@@ -362,7 +464,7 @@ export default class Inventory extends HTMLElement {
                 item.category = "default#000000";
                 item.pantry_quantity = pantry_quantity_input.value;
                 item.minimum_threshold = minimum_threshold_input.value;
-                item.auto_add_to_shopping_list = auto_add_top_shopping_list_input.checked;
+                item.auto_add_to_shopping_list = auto_add_to_shopping_list_input.checked;
                 item.shopping_list_quantity = shopping_list_quantity_input.value;
                 item.add_to_pantry_on_purchase = add_to_pantry_on_purchase.checked;
             };
@@ -413,6 +515,24 @@ export default class Inventory extends HTMLElement {
                 })
             })
         }
+    }
+
+    #timedUpdate() {
+        if (this.#sync_timer) {
+            clearTimeout(this.#sync_timer);
+            this.#sync_timer = null;
+        }
+        this.#sync_timer = setTimeout( () => {
+            while(this.#recently_modified.length > 0) {
+                const item = this.#recently_modified.pop();
+                Restock.updateItem(item).then( () => {
+                    raiseToast(`${item.name} has been updated`);
+                });
+                clearTimeout(this.#sync_timer);
+                this.#sync_timer = null;
+            }
+
+        }, this.#sync_interval);
     }
 }
 customElements.define('inventory-page', Inventory);
