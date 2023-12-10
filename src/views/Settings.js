@@ -1,5 +1,6 @@
 import Restock from "../restock.js";
 import {navigateTo} from "../index.js";
+import {raiseToast} from "../utility.js";
 
 export default class SettingsPage extends HTMLElement {
 
@@ -71,30 +72,15 @@ export default class SettingsPage extends HTMLElement {
         // window.location.replace("/login");
     }
 
-    async deleteAccount() {
-        if (!confirm('Are you sure you want to delete your account? This cannot be undone.')) {
+    async deleteAccount(id) {
+        const user = Restock.getCurrentUser();
+        const account_was_deleted = await Restock.deleteUser(id);
+        if (!account_was_deleted) {
+            await raiseToast('Something went wrong. Try again later.', 'danger');
             return;
         }
-
-        const token = localStorage.getItem('token');
-        const userId = localStorage.getItem('userId');
-        if (token && userId) {
-            try {
-                const response = await Api.deleteUserAccount(userId);
-                if (response.ok) {
-                    console.log('Account deleted successfully');
-                    localStorage.removeItem('token');
-                    localStorage.removeItem('userId');
-                    window.location.href = '/login';
-                    await this.Toast('Account deleted successfully');
-                } else {
-                    console.error('Account deletion failed: ', response);
-                    await this.errorToast('Account deletion failed');
-                }
-            } catch (error) {
-                console.error('Error during account deletion: ', error);
-            }
-        }
+        await raiseToast('Account was successfully deleted.')
+        navigateTo('/login');
     }
 
     async renameUser(userId, newName) {
@@ -123,7 +109,27 @@ export default class SettingsPage extends HTMLElement {
 
         document.getElementById('delete-account').addEventListener('click', e => {
             e.preventDefault();
-            this.deleteAccount();
+            const current_user = Restock.getCurrentUser();
+            if (!current_user) return;
+
+            const alert = document.createElement('ion-alert');
+            alert.header = "Warning";
+            alert.message = `You are about to delete your account. This action cannot be undone.`;
+            alert.buttons = [
+                {
+                    text: 'Cancel',
+                    role: 'cancel',
+                },
+                {
+                    text: 'Delete Account',
+                    role: 'delete',
+                    handler: () => {
+                        this.deleteAccount(current_user.id)
+                    }
+                }
+            ];
+            document.body.appendChild(alert);
+            alert.present();
         });
 
         document.getElementById('rename-button').addEventListener('click', e => {

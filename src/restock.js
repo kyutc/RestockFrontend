@@ -233,6 +233,33 @@ export default class Restock {
         return true;
     }
 
+    // static async updateUser(obj) {
+    //     const response = await Api.updateUserAccount(this.#session, obj);
+    //     if (!response.ok) {
+    //         const body = await response.text();
+    //         console.log("DEBUG: Restock.updateUser -- Failed to update user", body);
+    //         return false;
+    //     }
+    //     console.log("DEBUG: Restock.updateUser -- Successfully updated user");
+    //     const data = await response.json();
+    //     this.#user = new User(data);
+    //     // restockdb.deleteGroup
+    //     return true;
+    // }
+
+    static async deleteUser(id) {
+        const response = await Api.deleteUserAccount(this.#session, id);
+        if (!response.ok) {
+            const body = await response.text();
+            console.log("DEBUG: Restock.deleteUser -- Failed to delete user", body);
+            return false;
+        }
+        console.log("DEBUG: Restock.deleteUser -- Successfully deleted user");
+        this.#reset(); // Purge cached data
+        // restockdb.deleteUser
+        return true;
+    }
+
     static async createGroup(name) {
         const response = await Api.createGroup(this.#session, name);
         if (!response.ok) {

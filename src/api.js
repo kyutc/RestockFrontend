@@ -153,17 +153,17 @@ export default class Api {
 
     /**
      * Delete a user account.
-     * 
+     * @param {string} token
      * @param {number} userId
      * @returns {Promise<Response>}
      */
-    static async deleteUserAccount(userId) {
-        const url = this._base_url + "user/" + userId;
-        const token = localStorage.getItem('token');
+    static async deleteUserAccount(token, userId) {
+    const url = this._base_url + "user/" + userId;
         const options = {
             method: "DELETE",
             headers: {
-                ...this._get_headers(),
+                ...this._headers,
+                "X-RestockUserApiToken" : token
             }
         };
         return fetch(url, options);
