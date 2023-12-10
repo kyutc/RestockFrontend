@@ -3,7 +3,7 @@ export default class GroupMember {
     #id;
 
     /** @type {number} */
-    #user_id;
+    #name;
 
     /** @type {number} */
     #group_id;
@@ -13,7 +13,7 @@ export default class GroupMember {
 
     constructor(obj) {
         this.#id = obj['id'];
-        this.#user_id = obj['user_id'];
+        this.#name = obj['name'];
         this.#group_id = obj['group_id'];
         this.#role = obj['role'];
     }
@@ -22,8 +22,8 @@ export default class GroupMember {
         return this.#id;
     }
 
-    get ['user_id']() {
-        return this.#user_id;
+    get ['name']() {
+        return this.#name;
     }
 
     get ['group_id']() {

@@ -1,4 +1,5 @@
 import Item from "./models/item.js";
+import Invite from "./models/invite.js"
 
 export default class Api {
     static _base_url = "https://api.pantrysync.pro/api/v1/";
@@ -188,12 +189,11 @@ export default class Api {
 
     /**
      * Get the list of groups from the server.
-     *
+     * @param {string} token
      * @returns {Promise<Response>}
      */
-    static async getGroups() {
+    static async getGroups(token) {
         const url = this._base_url + "group";
-        const token = localStorage.getItem('token');
         const options = {
             method: "GET",
             headers: {
@@ -275,51 +275,58 @@ export default class Api {
 
     /**
      * Retrieves details of a specific group member.
-     * 
-     * @param {number} memberId
+     * @param token
+     * @param {GroupMember} group_member
      * @returns {Promise<Response>}
      */
-    static async getGroupMemberDetails(memberId) {
-        const url = this._base_url + "groupmember/" + memberId;
+    static async getGroupMemberDetails(token, group_member) {
+        const url = this._base_url + `group/${group_member.group_id}member/${group_member.id}`;
         const options = {
             method: "GET",
-            headers: this._headers
+            headers: {
+                ...this._headers,
+                "X-RestockUserApiToken": token
+            }
         };
         return fetch(url, options);
     }
 
     /**
      * Add a new member to a specific group.
-     * 
-     * @param {number} groupId
-     * @param {object} memberDetails
+     * @param token
+     * @param {GroupMember} group_member
      * @returns {Promise<Response>}
      */
-    static async addGroupMember(groupId, memberDetails) {
-        const url = this._base_url + "group/" + groupId + "/addmember";
+    static async addGroupMember(groupId, group_member) {
+        const url = this._base_url + `group/${group_member.group_id}/member`;
+        const formData = new FormData();
+        formData.append('user_id', group_member.user_id);
+        formData.append('role', group_member.role);
         const options = {
             method: "POST",
-            body: JSON.stringify(memberDetails),
-            headers: this._headers
+            body: formData,
+            headers: {
+                ...this._headers,
+                "X-RestockUserApiToken": token
+            }
         };
         return fetch(url, options);
     }
 
     /**
      * Update details of a specifc group member.
-     * 
-     * @param {number} memberId
-     * @param {object} memberDetails
+     * @param token
+     * @param {GroupMember} group_member
      * @returns {Promise<Response>}
      */
-    static async updateGroupMember(memberId, memberDetails) {
-        const url = this._base_url + "groupmember/" + memberId;
+    static async updateGroupMember(token, group_member) {
+        const url = this._base_url + `group/${group_member.group_id}/member/${group_member.id}`;
         const options = {
             method: "PUT",
-            body: JSON.stringify(memberDetails),
+            body: group_member.toJSON(),
             headers: {
                 ...this._headers,
-                "Content-Type": "application/json"
+                "X-RestockUserApiToken": token
             }
         };
         return fetch(url, options);
@@ -327,15 +334,18 @@ export default class Api {
 
     /**
      * Remove a member from a group.
-     * 
-     * @param {number} memberId
+     * @param token
+     * @param {GroupMember} group_member
      * @returns {Promise<Response>}
      */
-    static async deleteGroupMember(memberId) {
-        const url = this._base_url + "groupmember/" + memberId;
+    static async deleteGroupMember(token, group_member) {
+        const url = this._base_url + `group/${group_member.group_id}/member/${group_member.id}`;
         const options = {
             method: "DELETE",
-            headers: this._headers
+            headers: {
+                ...this._headers,
+                "X-RestockUserApiToken": token
+            }
         };
         return fetch(url, options);
     }
@@ -407,7 +417,6 @@ export default class Api {
         return fetch(url, options);
     }
 
-
     /**
      * Fetch history
      * @param token
@@ -418,6 +427,96 @@ export default class Api {
         const url = this._base_url + `group/${group_id}/history`;
         const options = {
             method: "GET",
+            headers: {
+                ...this._headers,
+                "X-RestockUserApiToken": token
+            }
+        };
+        return fetch(url, options);
+    }
+
+    /**
+     * Get all active invitation codes for this group
+     * @param token
+     * @param group_id
+     * @return {Promise<Response>}
+     */
+    static async getGroupInvites(token, group_id) {
+        const url = this._base_url + `group/${group_id}/invite`;
+        const options = {
+            method: "GET",
+            headers: {
+                ...this._headers,
+                "X-RestockUserApiToken": token
+            }
+        };
+        return fetch(url, options);
+    }
+
+    /**
+     * Generate a new invitation for a group
+     * @param token
+     * @param group_id
+     * @return {Promise<Response>}
+     */
+    static async createGroupInvite(token, group_id){
+        const url = this._base_url + `group/${group_id}/invite`;
+        const options = {
+            method: "POST",
+            headers: {
+                ...this._headers,
+                "X-RestockUserApiToken": token
+            }
+        };
+        return fetch(url, options);
+    }
+
+    /**
+     * Delete an existing invitation
+     * @param token
+     * @param {Invite} invite
+     * @return {Promise<Response>}
+     */
+    static async deleteGroupInvite(token, invite){
+        const url = this._base_url + `group/${invite.group_id}/invite/${invite.id}`;
+        const options = {
+            method: "DELETE",
+            headers: {
+                ...this._headers,
+                "X-RestockUserApiToken": token
+            }
+        };
+        return fetch(url, options);
+    }
+
+    /**
+     * Check if a group invitation is valid
+     * @param token
+     * @param {string} invite_code
+     * @return {Promise<Response>}
+     */
+    static async getGroupInviteDetails(token, invite_code){
+        const url = this._base_url + `invite/${invite_code}`;
+        const options = {
+            method: "GET",
+            headers: {
+                ...this._headers,
+                "X-RestockUserApiToken": token
+            }
+        };
+        return fetch(url, options);
+    }
+
+    /**
+     * Join a group by invitation
+     * @param token
+     * @param {string} invite_code
+     * @return {Promise<Response>}
+     */
+    static async acceptGroupInvite(token, invite_code){
+        const url = this._base_url + `invite/${invite_code}`;
+        const options = {
+            method: "POST",
             headers: {
                 ...this._headers,
                 "X-RestockUserApiToken": token
